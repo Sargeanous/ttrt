@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="370" height="60" viewBox="0 0 370 60" role="img" aria-labelledby="title">
+  <title id="title">SUTPC 深城交</title>
+  <path d="M4 36C27 14 51 4 77 9c20 4 34 18 55 27 22 9 48 5 77-16" fill="none" stroke="#4f5fb7" stroke-width="5" stroke-linecap="round"/>
+  <path d="M16 6c26 20 55 31 88 32 22 1 43-4 62-14" fill="none" stroke="#161a2f" stroke-width="3.2" stroke-linecap="round" opacity=".95"/>
+  <text x="96" y="42" font-family="Aptos, Arial, sans-serif" font-size="39" font-weight="800" fill="#3d3d3f" letter-spacing=".2">SUTPC</text>
+  <text x="260" y="41" font-family="Aptos, 'Microsoft YaHei', 'Noto Sans CJK SC', Arial, sans-serif" font-size="31" font-weight="800" fill="#3d3d3f">深城交</text>
+</svg>
