@@ -14,7 +14,7 @@ export type DecisionPath = "Approve" | "Conditional approval" | "Reject" | "Pend
 export type ReviewRound = "Initial Review" | "2nd Review" | "Final Review";
 export type SignatureStatus = "signed" | "pending" | "blocked";
 export type RequirementState = "pass" | "warning" | "fail";
-export type CommentState = "resolved" | "open" | "approved-with-comments";
+export type CommentState = "resolved" | "open" | "approvedWithComments";
 
 export interface DocumentCheck {
   name: string;
@@ -110,21 +110,21 @@ export const submissions: Submission[] = [
       { name: "Technical evaluation", state: "warning", note: "Marked as not attached in the source sheet; AI flagged for PM confirmation." },
     ],
     comments: [
-      { reviewer: "Hussein Elhadi", role: "TTRT member", date: "14.05.2026", state: "resolved", comment: "No comments." },
+      { reviewer: "Hussein Elhadi", role: "TTRT member", date: "14 May 2026", state: "resolved", comment: "No comments." },
       {
         reviewer: "Abdulkader Ahmed",
         role: "AI/V2X reviewer",
-        date: "15.05.2026",
-        state: "approved-with-comments",
+        date: "15 May 2026",
+        state: "approvedWithComments",
         comment: "Consider committee comments on platform alignment, governance, and data exchange.",
       },
-      { reviewer: "Mohammad Almasoud", role: "TTRT member", date: "15.05.2026", state: "resolved", comment: "No comments." },
+      { reviewer: "Mohammad Almasoud", role: "TTRT member", date: "15 May 2026", state: "resolved", comment: "No comments." },
     ],
     signatures: [
-      { name: "Rashid Al Naqbi", role: "TTRT member", date: "20/05/2026", status: "signed" },
-      { name: "Mohammed Shalwani", role: "TTRT member", date: "20-05-2026", status: "signed" },
-      { name: "Abdulqader Ahmed", role: "AI/V2X reviewer", date: "15.5.2026", status: "signed" },
-      { name: "Hussein El Hadi", role: "TTRT member", date: "14.05.2026", status: "signed" },
+      { name: "Rashid Al Naqbi", role: "TTRT member", date: "20 May 2026", status: "signed" },
+      { name: "Mohammed Shalwani", role: "TTRT member", date: "20 May 2026", status: "signed" },
+      { name: "Abdulqader Ahmed", role: "AI/V2X reviewer", date: "15 May 2026", status: "signed" },
+      { name: "Hussein El Hadi", role: "TTRT member", date: "14 May 2026", status: "signed" },
       { name: "Surendra Sharma", role: "TTRT member", status: "pending" },
       { name: "HE. Hamad Alafeefi", role: "Executive Director", status: "pending" },
     ],
@@ -173,14 +173,14 @@ export const submissions: Submission[] = [
       {
         reviewer: "Abdulkader Ahmed",
         role: "AI/V2X reviewer",
-        date: "21.05.2026",
+        date: "21 May 2026",
         state: "open",
         comment: "Clarify standards profile, RSU certificate authority, and message-set interoperability.",
       },
       {
         reviewer: "Hadi Jammal",
         role: "Traffic systems",
-        date: "21.05.2026",
+        date: "21 May 2026",
         state: "open",
         comment: "Need integration plan with operations center incident workflow.",
       },
@@ -234,22 +234,22 @@ export const submissions: Submission[] = [
       {
         reviewer: "Hasanul Banna",
         role: "Signal systems",
-        date: "19.05.2026",
-        state: "approved-with-comments",
+        date: "19 May 2026",
+        state: "approvedWithComments",
         comment: "Require baseline reference for pedestrian conflict rates.",
       },
       {
         reviewer: "Nuha AlBusaeed",
         role: "Road safety",
-        date: "19.05.2026",
+        date: "19 May 2026",
         state: "open",
         comment: "Confirm school-zone prioritization criteria.",
       },
     ],
     signatures: [
-      { name: "Hasanul Banna", role: "Signal systems", date: "19.05.2026", status: "signed" },
+      { name: "Hasanul Banna", role: "Signal systems", date: "19 May 2026", status: "signed" },
       { name: "Nuha AlBusaeed", role: "Road safety", status: "pending" },
-      { name: "Mohamed Adnan", role: "Coordinator", date: "20.05.2026", status: "signed" },
+      { name: "Mohamed Adnan", role: "Coordinator", date: "20 May 2026", status: "signed" },
     ],
     timeline: [
       { label: "Project submission", owner: "PM", status: "done", sla: "17 May" },
@@ -291,12 +291,12 @@ export const submissions: Submission[] = [
       { name: "Cost estimate", state: "pass", note: "Submitted." },
     ],
     comments: [
-      { reviewer: "Surendra Sharma", role: "Network services", date: "15.05.2026", state: "resolved", comment: "No further comments after update." },
+      { reviewer: "Surendra Sharma", role: "Network services", date: "15 May 2026", state: "resolved", comment: "No further comments after update." },
     ],
     signatures: [
-      { name: "Surendra Sharma", role: "Network services", date: "16.05.2026", status: "signed" },
-      { name: "Rashid Al Naqbi", role: "TTRT lead", date: "17.05.2026", status: "signed" },
-      { name: "HE. Hamad Alafeefi", role: "Executive Director", date: "19.05.2026", status: "signed" },
+      { name: "Surendra Sharma", role: "Network services", date: "16 May 2026", status: "signed" },
+      { name: "Rashid Al Naqbi", role: "TTRT lead", date: "17 May 2026", status: "signed" },
+      { name: "HE. Hamad Alafeefi", role: "Executive Director", date: "19 May 2026", status: "signed" },
     ],
     timeline: [
       { label: "Project submission", owner: "PM", status: "done", sla: "12 May" },

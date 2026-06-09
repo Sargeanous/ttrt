@@ -21,7 +21,7 @@ Demo sign-in:
 
 ## Business surfaces
 
-- `Dashboard`: review queue, SLA pressure, evidence gaps, and next actions.
+- `Overview`: current process step, tracking KPIs, review queue, SLA pressure, evidence gaps, and next actions.
 - `Submissions`: one workspace per project package, including details, checks, AI opinion, and decision actions.
 - `Review Board`: TTRT member comments and consolidated recommendations.
 - `Signatures`: signature-chain tracking and ED approval readiness.
