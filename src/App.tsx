@@ -54,13 +54,8 @@ import origenLogo from "./assets/origen-logo.png";
 type Page =
   | "dashboard"
   | "submissions"
-  | "documents"
-  | "reviews"
-  | "signatures"
   | "rules"
-  | "reports"
   | "users"
-  | "notifications"
   | "settings";
 
 type ProjectType = "New Tender" | "Tender Renewal" | "Variation" | "Direct Awarding" | "Other";
@@ -141,18 +136,13 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
     items: [
       { id: "dashboard", label: "Overview", icon: LayoutDashboard },
       { id: "submissions", label: "Submissions", icon: Inbox },
-      { id: "documents", label: "Documents", icon: FileText },
-      { id: "reviews", label: "Review Board", icon: UsersRound },
-      { id: "signatures", label: "Signatures", icon: Signature },
       { id: "rules", label: "Rules", icon: Library },
-      { id: "reports", label: "Reports", icon: FileText },
     ],
   },
   {
     label: "Admin",
     items: [
       { id: "users", label: "User Management", icon: UsersRound },
-      { id: "notifications", label: "Notifications", icon: Bell },
     ],
   },
 ];
@@ -160,13 +150,8 @@ const navGroups: Array<{ label: string; items: NavItem[] }> = [
 const pageLabels: Record<Page, { group: string; page: string }> = {
   dashboard: { group: "Project review", page: "Overview" },
   submissions: { group: "Project review", page: "Submissions" },
-  documents: { group: "Project review", page: "Documents" },
-  reviews: { group: "Project review", page: "Review Board" },
-  signatures: { group: "Project review", page: "Signatures" },
   rules: { group: "Project review", page: "Rules" },
-  reports: { group: "Project review", page: "Reports" },
   users: { group: "Admin", page: "User Management" },
-  notifications: { group: "Admin", page: "Notifications" },
   settings: { group: "Admin", page: "Settings" },
 };
 
@@ -174,12 +159,12 @@ const initialUsers: TtrtUser[] = [
   { id: "u-mehdi", name: "Mehdi Sargeane", email: "mehdi.sargeane@origen.ae", role: "Platform admin", scope: "Configuration", status: "Active" },
   { id: "u-abdulqader", name: "Abdulqader Ahmed", email: "abdulqader.ahmed@itc.gov.ae", role: "TTRT lead", scope: "All submissions", status: "Active" },
   { id: "u-zain", name: "Zain Abdulnaser Al Zubaidi", email: "zain.alzubaidi@itc.gov.ae", role: "Project manager", scope: "Aviation submissions", status: "Active" },
-  { id: "u-hussein", name: "Hussein Elhadi", email: "hussein.elhadi@itc.gov.ae", role: "Technical reviewer", scope: "TTRT comments", status: "Active" },
-  { id: "u-mohammad-almasoud", name: "Mohammad Almasoud", email: "mohammad.almasoud@itc.gov.ae", role: "Technical reviewer", scope: "TTRT comments", status: "Active" },
+  { id: "u-hussein", name: "Hussein Elhadi", email: "hussein.elhadi@itc.gov.ae", role: "Technical reviewer", scope: "Strategy and Governance", status: "Active" },
+  { id: "u-mohammad-almasoud", name: "Mohammad Almasoud", email: "mohammad.almasoud@itc.gov.ae", role: "Technical reviewer", scope: "Procurement and finance", status: "Active" },
   { id: "u-rashid", name: "Rashid Al Naqbi", email: "rashid.alnaqbi@itc.gov.ae", role: "TTRT member", scope: "Final review", status: "Active" },
   { id: "u-mohammed-shalwani", name: "Mohammed Shalwani", email: "mohammed.shalwani@itc.gov.ae", role: "TTRT member", scope: "Final review", status: "Active" },
   { id: "u-mohamed-adnan", name: "Mohamed Adnan", email: "mohamed.adnan@itc.gov.ae", role: "Coordinator", scope: "Screening and circulation", status: "Active" },
-  { id: "u-hadi", name: "Hadi Jammal", email: "hadi.jammal@itc.gov.ae", role: "Technical reviewer", scope: "Operations and ITS", status: "Active" },
+  { id: "u-hadi", name: "Hadi Jammal", email: "hadi.jammal@itc.gov.ae", role: "Technical reviewer", scope: "Traffic systems", status: "Active" },
   { id: "u-ghassan", name: "Ghassan Abazid", email: "ghassan.abazid@itc.gov.ae", role: "Technical reviewer", scope: "Enterprise architecture", status: "Active" },
   { id: "u-hasanul", name: "Hasanul Banna", email: "hasanul.banna@itc.gov.ae", role: "Technical reviewer", scope: "Signal systems", status: "Active" },
   { id: "u-surendra", name: "Surendra Sharma", email: "surendra.sharma@itc.gov.ae", role: "Technical reviewer", scope: "Network services", status: "Active" },
@@ -188,6 +173,10 @@ const initialUsers: TtrtUser[] = [
 ];
 
 const isEmbedded = new URLSearchParams(window.location.search).get("embed") === "1";
+const explicitAiEndpoint = (import.meta.env.VITE_TTRT_AI_ENDPOINT as string | undefined)?.trim();
+const mobilityAiEndpoint = (import.meta.env.VITE_MOBILITY_AI_AGENT_ENDPOINT as string | undefined)?.trim();
+const aiEndpoint = explicitAiEndpoint || mobilityAiEndpoint;
+const aiProvider = ((import.meta.env.VITE_TTRT_AI_PROVIDER as string | undefined)?.trim() || "anthropic") as "anthropic" | "openai";
 
 const storageKeys = {
   submissions: "ttrt.submissions.v2",
@@ -195,6 +184,7 @@ const storageKeys = {
   users: "ttrt.users.v2",
   notifications: "ttrt.notifications.v2",
   rules: "ttrt.rules.v2",
+  currentUser: "ttrt.currentUser.v1",
 };
 
 const projectTypes: ProjectType[] = ["New Tender", "Tender Renewal", "Variation", "Direct Awarding", "Other"];
@@ -237,6 +227,358 @@ function saveStored<T>(key: string, value: T) {
   }
 }
 
+function normalizeName(value: string) {
+  return value.trim().toLowerCase().replace(/\s+/g, " ");
+}
+
+function normalizeForMatch(value: string) {
+  return value.toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function divisionReviewLens(user: TtrtUser) {
+  if (user.role === "Platform admin" || user.role === "TTRT lead") return "All TTRT divisions";
+  if (user.role === "Executive approver") return "Executive decision";
+  return user.scope || user.role;
+}
+
+function divisionKeywords(value: string) {
+  return normalizeForMatch(value)
+    .split(" ")
+    .filter((token) => token.length > 2 && !["and", "the", "for", "all", "its", "ttrt", "review", "reviews", "submissions"].includes(token));
+}
+
+function userMatchesName(user: TtrtUser, name: string) {
+  const userName = normalizeName(user.name);
+  const target = normalizeName(name);
+  return userName === target || userName.includes(target) || target.includes(userName);
+}
+
+function userRoleIs(user: TtrtUser, roles: string[]) {
+  return roles.includes(user.role);
+}
+
+function userOwnsProject(user: TtrtUser, submission: Submission) {
+  return user.role === "Project manager" && userMatchesName(user, submission.manager);
+}
+
+function submissionSearchText(submission: Submission) {
+  return normalizeForMatch([
+    submission.name,
+    submission.sector,
+    submission.division,
+    submission.scope,
+    submission.submittedDocuments.join(" "),
+    submission.documents.map((document) => `${document.name} ${document.note}`).join(" "),
+    submission.comments.map((comment) => `${comment.role} ${comment.comment}`).join(" "),
+    submission.signatures.map((signature) => signature.role).join(" "),
+  ].join(" "));
+}
+
+function userDivisionMatchesSubmission(user: TtrtUser, submission: Submission) {
+  if (userRoleIs(user, ["Platform admin", "TTRT lead", "Coordinator"])) return true;
+  if (userOwnsProject(user, submission)) return true;
+  if (submission.signatures.some((signature) => signature.status === "pending" && userMatchesName(user, signature.name))) return true;
+  if (submission.comments.some((comment) => comment.state !== "resolved" && userMatchesName(user, comment.reviewer))) return true;
+  if (!userRoleIs(user, ["Technical reviewer", "TTRT member"])) return false;
+
+  const keywords = divisionKeywords(divisionReviewLens(user));
+  if (!keywords.length) return false;
+  const haystack = submissionSearchText(submission);
+  return keywords.some((keyword) => haystack.includes(keyword));
+}
+
+function divisionAiRecommendation(submission: Submission, user: TtrtUser, files: ProjectFile[]) {
+  const lens = divisionReviewLens(user);
+  const lowerLens = normalizeForMatch(lens);
+  const evidence = requirementCounts(submission);
+  const signatures = signatureCounts(submission);
+  const gaps = evidence.fail + evidence.warning;
+  const filePhrase = files.length ? `${files.length} uploaded file${files.length === 1 ? "" : "s"}` : "no uploaded files yet";
+
+  if (userOwnsProject(user, submission)) {
+    return {
+      title: gaps > 0 ? "PM correction package required" : "PM response is ready to submit",
+      summary: gaps > 0
+        ? `From the project manager view, close ${gaps} evidence gap${gaps === 1 ? "" : "s"} and attach the corrected package before returning it to TTRT. The current record has ${filePhrase}.`
+        : `From the project manager view, the evidence package is clean enough to resubmit. Keep the response focused on TTRT comments and uploaded evidence.`,
+      focus: "PM response and evidence closure",
+      recommendedAction: gaps > 0 ? "Return corrected evidence" : "Resubmit to TTRT",
+    };
+  }
+
+  if (user.role === "Coordinator") {
+    return {
+      title: gaps > 0 ? "Coordinate return or targeted circulation" : "Ready for division circulation",
+      summary: gaps > 0
+        ? `The coordinator should decide whether the ${gaps} evidence gap${gaps === 1 ? "" : "s"} can be clarified during circulation or should be returned before consuming reviewer time.`
+        : `The package can be circulated to the relevant divisions. Track comments by owner and consolidate them into one PM-facing response.`,
+      focus: "Completeness, routing, and consolidation",
+      recommendedAction: gaps > 0 ? "Screen before circulation" : "Circulate to reviewers",
+    };
+  }
+
+  if (user.role === "Executive approver") {
+    return {
+      title: signatures.pending > 0 ? "Not ready for executive signature" : "Executive decision package is ready",
+      summary: signatures.pending > 0
+        ? `The executive view should wait for ${signatures.pending} pending signature${signatures.pending === 1 ? "" : "s"} before final approval. Focus only on decision, conditions, and residual risk.`
+        : `The signature chain is complete enough for executive decision. Review the recommendation, residual conditions, and audit trail before release.`,
+      focus: "Decision readiness",
+      recommendedAction: signatures.pending > 0 ? "Wait for signatures" : submission.decision,
+    };
+  }
+
+  if (lowerLens.includes("network")) {
+    return {
+      title: "Network services review required",
+      summary: `Review resilience, backhaul ownership, redundancy, cybersecurity connectivity, and operational support. For ${submission.code}, the AI recommends confirming network ownership before approval.`,
+      focus: "Connectivity, redundancy, operations support",
+      recommendedAction: "Approve with network conditions",
+    };
+  }
+
+  if (lowerLens.includes("signal")) {
+    return {
+      title: "Signal systems review required",
+      summary: `Check signal controller interfaces, phasing impact, pedestrian timing, loop/cabinet conflicts, and integration with existing signal assets before clearing this package.`,
+      focus: "Signal compatibility and safety",
+      recommendedAction: "Approve with signal comments",
+    };
+  }
+
+  if (lowerLens.includes("road") || lowerLens.includes("safety")) {
+    return {
+      title: "Road safety review required",
+      summary: `Evaluate conflict points, user safety, construction staging, operational disruption, and whether proposed mitigation is measurable before the recommendation is finalized.`,
+      focus: "Safety risk and mitigation evidence",
+      recommendedAction: "Carry safety conditions",
+    };
+  }
+
+  if (lowerLens.includes("architecture") || lowerLens.includes("enterprise")) {
+    return {
+      title: "Architecture review required",
+      summary: `Validate system interfaces, data ownership, integration pattern, cyber controls, and whether the proposal fits the Abu Dhabi Mobility enterprise architecture. Current package has ${filePhrase}.`,
+      focus: "Architecture fit and integration controls",
+      recommendedAction: "Approve with architecture conditions",
+    };
+  }
+
+  if (lowerLens.includes("finance") || lowerLens.includes("procurement")) {
+    return {
+      title: "Finance and procurement review required",
+      summary: `Review procurement route, cost justification, budget availability, contract implications, and whether the proposed decision path is defensible for audit.`,
+      focus: "Budget, procurement, commercial risk",
+      recommendedAction: "Validate commercial justification",
+    };
+  }
+
+  if (lowerLens.includes("strategy") || lowerLens.includes("governance")) {
+    return {
+      title: "Strategy and governance review required",
+      summary: `Check alignment with ITC strategic objectives, governance ownership, policy dependencies, and whether the recommendation is explicit enough for executive sign-off.`,
+      focus: "Strategic alignment and governance",
+      recommendedAction: submission.decision === "Pending" ? "Approve with governance comments" : submission.decision,
+    };
+  }
+
+  if (lowerLens.includes("v2x") || lowerLens.includes("traffic") || lowerLens.includes("operations")) {
+    return {
+      title: "Operational ITS review required",
+      summary: `Assess operational impact, standards fit, handover readiness, traffic-network dependencies, and whether reviewer comments can be consolidated without another PM loop.`,
+      focus: "ITS operations and technical readiness",
+      recommendedAction: gaps > 0 ? "Return targeted comments" : "Approve with technical comments",
+    };
+  }
+
+  return {
+    title: `${lens} review required`,
+    summary: `Review this package from the ${lens} perspective. The AI found ${gaps} evidence gap${gaps === 1 ? "" : "s"}, ${signatures.pending} pending signature${signatures.pending === 1 ? "" : "s"}, and ${filePhrase}.`,
+    focus: lens,
+    recommendedAction: submission.decision === "Pending" ? selectedRecommendedAction(submission, gaps) : submission.decision,
+  };
+}
+
+function selectedRecommendedAction(submission: Submission, gaps: number) {
+  if (gaps > 0) return "Return to PM";
+  if (submission.priority === "Critical") return "Approve with conditions";
+  return "Approve";
+}
+
+type TtrtDecisionAction = "approve" | "conditional" | "return" | "reject";
+
+type TtrtAiPick = {
+  kind: TtrtDecisionAction | "comment";
+  label: string;
+  helper: string;
+};
+
+function canRecordTtrtDecision(user: TtrtUser) {
+  return userRoleIs(user, ["Platform admin", "TTRT lead", "Coordinator", "Executive approver"]);
+}
+
+function canRejectSubmission(user: TtrtUser) {
+  return user.role === "Executive approver";
+}
+
+function ttrtAiPick(
+  submission: Submission,
+  user: TtrtUser,
+  requirementSummary: ReturnType<typeof requirementCounts>,
+  signatureSummary: ReturnType<typeof signatureCounts>,
+  openComments: number,
+): TtrtAiPick {
+  const evidenceIssues = requirementSummary.fail + requirementSummary.warning;
+
+  if (!canRecordTtrtDecision(user)) {
+    return {
+      kind: "comment",
+      label: "Add division comment",
+      helper: `Capture the ${divisionReviewLens(user)} review input for consolidation.`,
+    };
+  }
+
+  if (user.role === "Executive approver") {
+    if (signatureSummary.pending > 0 || openComments > 0) {
+      return {
+        kind: "conditional",
+        label: "Conditional approval",
+        helper: "Executive can approve with explicit conditions while residual items are closed.",
+      };
+    }
+    return {
+      kind: "approve",
+      label: "Approve",
+      helper: "The package is ready for executive decision and release.",
+    };
+  }
+
+  if (evidenceIssues > 0) {
+    return {
+      kind: "return",
+      label: "Return to PM",
+      helper: "Missing or weak evidence should be corrected before consuming more reviewer time.",
+    };
+  }
+
+  return {
+    kind: submission.priority === "Critical" ? "conditional" : "approve",
+    label: submission.priority === "Critical" ? "Conditional approval" : "Approve",
+    helper: "Record the TTRT recommendation and move the package toward executive approval.",
+  };
+}
+
+function stageRecipientsLabel(submission: Submission, users: TtrtUser[]) {
+  const recipients = recipientsForStage(submission, users);
+  if (!recipients.length) return "the responsible TTRT users";
+  if (recipients.length <= 2) return recipients.join(" and ");
+  return `${recipients.slice(0, 2).join(", ")} and ${recipients.length - 2} others`;
+}
+
+const defaultDivisionByUserId: Record<string, string> = {
+  "u-hussein": "Strategy and Governance",
+  "u-mohammad-almasoud": "Procurement and finance",
+  "u-hadi": "Traffic systems",
+  "u-ghassan": "Enterprise architecture",
+  "u-hasanul": "Signal systems",
+  "u-surendra": "Network services",
+  "u-nuha": "Road safety",
+  "u-abdulqader": "All submissions",
+};
+
+function migrateUsersToDivisionLens(storedUsers: TtrtUser[]) {
+  return storedUsers.map((user) => {
+    const migratedScope = defaultDivisionByUserId[user.id];
+    if (!migratedScope) return user;
+    if (user.scope === "TTRT comments" || user.scope === "Operations and ITS" || user.scope === "Assigned submissions") {
+      return { ...user, scope: migratedScope };
+    }
+    return user;
+  });
+}
+
+function activeUsers(users: TtrtUser[]) {
+  return users.filter((user) => user.status === "Active");
+}
+
+function recipientsForStage(submission: Submission, users: TtrtUser[]) {
+  const active = activeUsers(users);
+  const byRole = (roles: string[]) => active.filter((user) => roles.includes(user.role)).map((user) => user.name);
+  const byPerson = active.filter((user) =>
+    userMatchesName(user, submission.manager) ||
+    submission.signatures.some((signature) => signature.status === "pending" && userMatchesName(user, signature.name)) ||
+    submission.comments.some((comment) => comment.state !== "resolved" && userMatchesName(user, comment.reviewer)),
+  ).map((user) => user.name);
+
+  const recipients =
+    submission.stage === "Initial screening"
+      ? byRole(["Coordinator", "TTRT lead", "Platform admin"])
+      : submission.stage === "Returned to PM" || submission.stage === "PM response"
+        ? [...byPerson, ...byRole(["Coordinator", "TTRT lead"])]
+        : submission.stage === "Technical review"
+          ? [...byPerson, ...byRole(["Technical reviewer", "TTRT member", "Coordinator", "TTRT lead"])]
+          : submission.stage === "Final recommendation"
+            ? [...byPerson, ...byRole(["Coordinator", "TTRT lead", "TTRT member"])]
+            : submission.stage === "Executive approval"
+              ? [...byPerson, ...byRole(["Executive approver", "TTRT lead"])]
+              : byRole(["Coordinator", "TTRT lead", "Platform admin"]);
+
+  return Array.from(new Set(recipients)).filter(Boolean);
+}
+
+function isSubmissionClosed(submission: Submission) {
+  return submission.stage === "Released" || submission.stage === "Rejected";
+}
+
+function actionReasonForUser(submission: Submission, user: TtrtUser) {
+  const role = user.role;
+  const pendingSignature = submission.signatures.find((signature) => signature.status === "pending" && userMatchesName(user, signature.name));
+  const openComment = submission.comments.find((comment) => comment.state !== "resolved" && userMatchesName(user, comment.reviewer));
+  const evidenceGaps = requirementCounts(submission).fail + requirementCounts(submission).warning;
+
+  if (pendingSignature) return `Signature required as ${pendingSignature.role}.`;
+  if (openComment) return "Resolve or confirm your review comment before consolidation.";
+  if (submission.stage === "Initial screening" && userRoleIs(user, ["Coordinator", "TTRT lead", "Platform admin"])) {
+    return evidenceGaps > 0 ? "Screen package completeness and decide whether to return to PM." : "Screen package and circulate to TTRT members.";
+  }
+  if (submission.stage === "Returned to PM" && userOwnsProject(user, submission)) {
+    return "Upload corrected evidence and resubmit the package.";
+  }
+  if (submission.stage === "PM response" && userOwnsProject(user, submission)) {
+    return "Respond to TTRT comments and upload the corrected package.";
+  }
+  if (submission.stage === "PM response" && userRoleIs(user, ["Coordinator", "TTRT lead", "Platform admin"])) {
+    return "Review PM response and decide whether comments are addressed.";
+  }
+  if (submission.stage === "Technical review" && userDivisionMatchesSubmission(user, submission) && userRoleIs(user, ["Technical reviewer", "TTRT member"])) {
+    return `Review from the ${divisionReviewLens(user)} division lens and record your recommendation.`;
+  }
+  if (submission.stage === "Technical review" && userRoleIs(user, ["Coordinator", "TTRT lead", "Platform admin"])) {
+    return "Monitor reviewer inputs and consolidate open technical comments.";
+  }
+  if (submission.stage === "Final recommendation" && userRoleIs(user, ["Coordinator", "TTRT lead", "Platform admin"])) {
+    return "Prepare the final recommendation and clear remaining signatures.";
+  }
+  if (submission.stage === "Executive approval" && userRoleIs(user, ["Executive approver", "TTRT lead", "Platform admin"])) {
+    return "Review the recommendation and record the executive decision.";
+  }
+  if (role === "Platform admin" || role === "TTRT lead") return submission.nextAction;
+  return "";
+}
+
+function isActionRequiredForUser(submission: Submission, user: TtrtUser) {
+  if (isSubmissionClosed(submission)) return false;
+  return Boolean(actionReasonForUser(submission, user));
+}
+
+function actionPriority(submission: Submission) {
+  if (submission.priority === "Critical") return 0;
+  if (signatureCounts(submission).pending > 0) return 1;
+  if (requirementCounts(submission).fail > 0) return 2;
+  if (submission.priority === "High") return 3;
+  return 4;
+}
+
 export default function App() {
   const [signedIn, setSignedIn] = useState(isEmbedded);
   const [page, setPage] = useState<Page>("dashboard");
@@ -249,19 +591,36 @@ export default function App() {
   const [foldedGroups, setFoldedGroups] = useState<Record<string, boolean>>({});
   const [rules, setRules] = useState<Rule[]>(() => loadStored(storageKeys.rules, initialRules));
   const [projectFiles, setProjectFiles] = useState<ProjectFile[]>(() => loadStored(storageKeys.files, []));
-  const [users, setUsers] = useState<TtrtUser[]>(() => loadStored(storageKeys.users, initialUsers));
+  const [users, setUsers] = useState<TtrtUser[]>(() => migrateUsersToDivisionLens(loadStored(storageKeys.users, initialUsers)));
+  const [currentUserId, setCurrentUserId] = useState(() => loadStored(storageKeys.currentUser, "u-abdulqader"));
   const [notifications, setNotifications] = useState<TtrtNotification[]>(() =>
     loadStored(storageKeys.notifications, []),
   );
   const [submitOpen, setSubmitOpen] = useState(false);
+  const [askOpen, setAskOpen] = useState(false);
+  const [notificationOpen, setNotificationOpen] = useState(false);
 
   useEffect(() => saveStored(storageKeys.submissions, submissionRecords), [submissionRecords]);
   useEffect(() => saveStored(storageKeys.files, projectFiles), [projectFiles]);
   useEffect(() => saveStored(storageKeys.users, users), [users]);
+  useEffect(() => saveStored(storageKeys.currentUser, currentUserId), [currentUserId]);
   useEffect(() => saveStored(storageKeys.notifications, notifications), [notifications]);
   useEffect(() => saveStored(storageKeys.rules, rules), [rules]);
+  useEffect(() => {
+    function handleShortcut(event: KeyboardEvent) {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+        event.preventDefault();
+        setAskOpen(true);
+        setNotificationOpen(false);
+      }
+    }
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, []);
 
   const selected = submissionRecords.find((item) => item.id === selectedId) ?? submissionRecords[0];
+  const currentUser = users.find((user) => user.id === currentUserId) ?? users.find((user) => user.status === "Active") ?? initialUsers[0];
   const searchQuery = query.trim().toLowerCase();
   const filtered = useMemo(() => {
     if (!searchQuery) return submissionRecords;
@@ -289,7 +648,7 @@ export default function App() {
       name: file.name,
       size: formatFileSize(file.size),
       uploadedAt: new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
-      uploadedBy: "Current user",
+      uploadedBy: currentUser.name,
       category: inferDocumentCategory(file.name),
       dataUrl: await readFileAsDataUrl(file),
       aiAnalysis: analyzeUploadedFile(file.name),
@@ -309,7 +668,7 @@ export default function App() {
         name: `New TTRT user ${next}`,
         email: `new.user.${next}@itc.local`,
         role: "Technical reviewer",
-        scope: "Assigned submissions",
+        scope: "Assigned division",
         status: "Pending",
       },
       ...current,
@@ -375,9 +734,9 @@ export default function App() {
         id: `n-${Date.now()}`,
         submissionId: id,
         title: `New TTRT submission: ${created.code}`,
-        body: `${payload.manager} submitted ${payload.name}. Initial screening is ready.`,
+        body: `${payload.manager} submitted ${payload.name}. Initial screening is ready for ${stageRecipientsLabel(created, users)}.`,
         createdAt: new Date().toLocaleString("en-GB", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }),
-        recipients: users.filter((user) => user.status === "Active").map((user) => user.name),
+        recipients: recipientsForStage(created, users),
         read: false,
       },
       ...current,
@@ -389,11 +748,13 @@ export default function App() {
     setNotifications((current) =>
       current.map((item) => (item.id === notification.id ? { ...item, read: true } : item)),
     );
+    setNotificationOpen(false);
     setSelectedId(notification.submissionId);
     setPage("submissions");
   }
 
   function pushNotification(submissionId: string, title: string, body: string, recipients?: string[]) {
+    const target = submissionRecords.find((submission) => submission.id === submissionId);
     setNotifications((current) => [
       {
         id: `n-${Date.now()}-${Math.random().toString(16).slice(2)}`,
@@ -401,7 +762,7 @@ export default function App() {
         title,
         body,
         createdAt: nowStamp(),
-        recipients: recipients ?? users.filter((user) => user.status === "Active").map((user) => user.name),
+        recipients: recipients ?? (target ? recipientsForStage(target, users) : activeUsers(users).map((user) => user.name)),
         read: false,
       },
       ...current,
@@ -417,8 +778,8 @@ export default function App() {
       ...submission,
       comments: [
         {
-          reviewer: "Current user",
-          role: "TTRT Coordinator",
+          reviewer: currentUser.name,
+          role: currentUser.role,
           date: todayStamp(),
           state,
           comment,
@@ -431,6 +792,10 @@ export default function App() {
   function applySubmissionAction(id: string, action: "approve" | "conditional" | "return" | "reject") {
     const current = submissionRecords.find((submission) => submission.id === id);
     if (!current) return;
+    if (action === "reject" && !canRejectSubmission(currentUser)) {
+      pushNotification(id, "Reject action blocked", "Only the Executive Director role can reject a TTRT submission.", [currentUser.name]);
+      return;
+    }
 
     const actionConfig = {
       approve: {
@@ -477,6 +842,13 @@ export default function App() {
         notificationBody: `${current.name} was rejected. Prepare the rejection report and PM notification.`,
       },
     }[action];
+    const nextSubmissionForNotification: Submission = {
+      ...current,
+      stage: actionConfig.stage,
+      decision: actionConfig.decision,
+      nextAction: actionConfig.nextAction,
+      bottleneck: actionConfig.bottleneck,
+    };
 
     patchSubmission(id, (submission) => ({
       ...submission,
@@ -493,8 +865,8 @@ export default function App() {
           : submission.signatures,
       comments: [
         {
-          reviewer: "Current user",
-          role: "TTRT decision",
+          reviewer: currentUser.name,
+          role: currentUser.role,
           date: todayStamp(),
           state: action === "return" ? "open" : "resolved",
           comment: actionConfig.comment,
@@ -502,7 +874,13 @@ export default function App() {
         ...submission.comments,
       ],
     }));
-    pushNotification(id, actionConfig.notificationTitle, actionConfig.notificationBody);
+    const recipients = recipientsForStage(nextSubmissionForNotification, users);
+    pushNotification(
+      id,
+      actionConfig.notificationTitle,
+      `${actionConfig.notificationBody} Alert sent to ${stageRecipientsLabel(nextSubmissionForNotification, users)}.`,
+      recipients,
+    );
   }
 
   function updateCommentState(submissionId: string, index: number, state: CommentState) {
@@ -521,7 +899,7 @@ export default function App() {
   function addReviewerComment(submissionId: string) {
     addSubmissionComment(
       submissionId,
-      "Reviewer comment added from the Review Board. Coordinator must consolidate it before final recommendation.",
+      "Reviewer comment added from the project workspace. Coordinator must consolidate it before final recommendation.",
       "open",
     );
     pushNotification(submissionId, "Reviewer comment added", "A new TTRT review comment was added and requires consolidation.");
@@ -531,12 +909,20 @@ export default function App() {
     const clean = comment.trim();
     if (!clean) return;
     addSubmissionComment(submissionId, clean, "open");
-    pushNotification(submissionId, "Project comment added", "A new project comment was added from the project workspace.");
+    const target = submissionRecords.find((submission) => submission.id === submissionId);
+    pushNotification(
+      submissionId,
+      `${divisionReviewLens(currentUser)} comment added`,
+      `${currentUser.name} added a review comment. Coordinator must consolidate it before the next stage.`,
+      target ? recipientsForStage(target, users) : undefined,
+    );
   }
 
   function updateSubmissionDetails(submissionId: string, payload: ProjectUpdatePayload) {
     const current = submissionRecords.find((submission) => submission.id === submissionId);
     if (!current) return;
+    const nextSubmissionForNotification: Submission = { ...current, ...payload };
+    const stageChanged = payload.stage !== current.stage;
 
     patchSubmission(submissionId, (submission) => ({
       ...submission,
@@ -544,8 +930,8 @@ export default function App() {
       timeline: payload.stage !== submission.stage ? updateTimelineForStage(submission.timeline, payload.stage) : submission.timeline,
       comments: [
         {
-          reviewer: "Current user",
-          role: "TTRT Coordinator",
+          reviewer: currentUser.name,
+          role: currentUser.role,
           date: todayStamp(),
           state: "resolved",
           comment: "Project details updated from the project workspace.",
@@ -553,7 +939,14 @@ export default function App() {
         ...submission.comments,
       ],
     }));
-    pushNotification(submissionId, `${current.code} updated`, `${payload.name} project details were updated.`);
+    pushNotification(
+      submissionId,
+      stageChanged ? `${current.code} moved to ${payload.stage}` : `${current.code} updated`,
+      stageChanged
+        ? `${payload.name} is now with ${stageRecipientsLabel(nextSubmissionForNotification, users)}.`
+        : `${payload.name} project details were updated.`,
+      stageChanged ? recipientsForStage(nextSubmissionForNotification, users) : undefined,
+    );
   }
 
   function signSubmission(submissionId: string, signatureKey: string) {
@@ -620,7 +1013,7 @@ export default function App() {
             <PanelLeftClose size={18} />
           </button>
         </div>
-        <button className="ask-button" type="button" onClick={() => setPage("submissions")}>
+        <button className="ask-button" type="button" onClick={() => { setAskOpen(true); setNotificationOpen(false); }}>
           <Sparkles size={16} />
           <span>Ask TTRT...</span>
           <kbd>Ctrl K</kbd>
@@ -686,16 +1079,25 @@ export default function App() {
             />
           </label>
           <div className="top-actions">
-            <div className="powered-by">
-              Powered by
-              <img src={origenLogo} alt="Origen" />
-            </div>
             <span className="clock">18:42 / Asia Dubai</span>
-            <button className="icon-button" type="button" aria-label="Notifications" onClick={() => setPage("notifications")}>
-              <Bell size={17} />
-              {notifications.some((item) => !item.read) && <span className="dot" />}
-            </button>
-            <button className="icon-button" type="button" aria-label="Settings" onClick={() => setPage("settings")}><Settings size={17} /></button>
+            <label className="role-switcher" aria-label="View TTRT as">
+              <UsersRound size={15} />
+              <select value={currentUser.id} onChange={(event) => setCurrentUserId(event.target.value)}>
+                {activeUsers(users).map((user) => (
+                  <option key={user.id} value={user.id}>{user.name} - {user.role}</option>
+                ))}
+              </select>
+            </label>
+            <div className="notification-anchor">
+              <button className="icon-button" type="button" aria-label="Notifications" onClick={() => setNotificationOpen((current) => !current)}>
+                <Bell size={17} />
+                {notifications.some((item) => !item.read) && <span className="dot" />}
+              </button>
+              {notificationOpen && (
+                <NotificationPopover notifications={notifications} onOpen={openNotification} />
+              )}
+            </div>
+            <button className="icon-button" type="button" aria-label="Settings" onClick={() => { setNotificationOpen(false); setPage("settings"); }}><Settings size={17} /></button>
             <button className="icon-button" type="button" aria-label="Sign out" onClick={() => setSignedIn(false)}><LogOut size={17} /></button>
           </div>
         </header>
@@ -703,19 +1105,18 @@ export default function App() {
         <main className="content">
           {page === "dashboard" && (
             <Dashboard
-              selected={selected}
               submissions={submissionRecords}
+              currentUser={currentUser}
               setPage={setPage}
               setSelectedId={setSelectedId}
               onOpenSubmit={() => setSubmitOpen(true)}
-              onClarification={(submissionId) => applySubmissionAction(submissionId, "return")}
-              onGenerateReport={(kind) => generateReport(kind)}
             />
           )}
           {page === "submissions" && (
             <SubmissionsPage
               submissions={filtered}
               selected={selected}
+              currentUser={currentUser}
               setSelectedId={setSelectedId}
               projectFiles={projectFiles}
               onUpload={uploadProjectFiles}
@@ -725,19 +1126,29 @@ export default function App() {
               onAddComment={addProjectComment}
               onCommentState={updateCommentState}
               onUpdateSubmission={updateSubmissionDetails}
+              onSign={signSubmission}
+              onRemindSignature={remindSignature}
             />
           )}
-          {page === "documents" && <DocumentsPage submissions={filtered} selected={selected} setSelectedId={setSelectedId} projectFiles={projectFiles} onUpload={uploadProjectFiles} onRemoveFile={removeProjectFile} />}
-          {page === "reviews" && <ReviewBoard selected={selected} submissions={filtered} setSelectedId={setSelectedId} onCommentState={updateCommentState} onAddComment={addReviewerComment} />}
-          {page === "signatures" && <SignaturesPage selected={selected} submissions={filtered} setSelectedId={setSelectedId} onSign={signSubmission} onRemind={remindSignature} />}
           {page === "rules" && <RulesPage rules={rules} setRules={setRules} onSave={saveRules} />}
-          {page === "reports" && <ReportsPage selected={selected} setPage={setPage} onGenerate={generateReport} />}
           {page === "users" && <UsersPage users={users} addUser={addUser} patchUser={patchUser} />}
-          {page === "notifications" && <NotificationsPage notifications={notifications} onOpen={openNotification} />}
           {page === "settings" && <SettingsPage />}
         </main>
       </div>
       {submitOpen && <SubmitProjectModal onClose={() => setSubmitOpen(false)} onSubmit={createSubmission} />}
+      {askOpen && (
+        <TtrtAskModal
+          submissions={submissionRecords}
+          projectFiles={projectFiles}
+          currentUser={currentUser}
+          onClose={() => setAskOpen(false)}
+          onOpenSubmission={(submissionId) => {
+            setSelectedId(submissionId);
+            setPage("submissions");
+            setAskOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -853,7 +1264,103 @@ function SubmitProjectModal({
   );
 }
 
-function NotificationsPage({
+function TtrtAskModal({
+  submissions: visibleSubmissions,
+  projectFiles,
+  currentUser,
+  onClose,
+  onOpenSubmission,
+}: {
+  submissions: Submission[];
+  projectFiles: ProjectFile[];
+  currentUser: TtrtUser;
+  onClose: () => void;
+  onOpenSubmission: (submissionId: string) => void;
+}) {
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [targetId, setTargetId] = useState<string | null>(null);
+  const suggestions = [
+    "What needs follow-up today?",
+    "Which submissions have missing evidence?",
+    "Who still needs to sign?",
+    "Summarize the active TTRT projects",
+  ];
+
+  async function ask(value = question) {
+    const trimmed = value.trim();
+    if (!trimmed || busy) return;
+    setQuestion(trimmed);
+    setBusy(true);
+    const response = await askTtrtAi(trimmed, visibleSubmissions, projectFiles, currentUser);
+    setAnswer(response);
+    setTargetId(resolveTtrtTarget(trimmed, response, visibleSubmissions)?.id ?? null);
+    setBusy(false);
+  }
+
+  return (
+    <div className="modal-backdrop ask-backdrop" role="presentation" onMouseDown={onClose}>
+      <section className="ask-modal" role="dialog" aria-modal="true" aria-label="Ask TTRT" onMouseDown={(event) => event.stopPropagation()}>
+        <header className="ask-modal-header">
+          <div className="ask-brand">
+            <span><Sparkles size={24} /></span>
+            <div>
+              <h2>TTRT - Ask anything</h2>
+              <p>Ask across submissions, evidence gaps, signatures, comments, SLA, and next actions.</p>
+            </div>
+          </div>
+          <button className="icon-button" type="button" aria-label="Close ask panel" onClick={onClose}>
+            <XCircle size={18} />
+          </button>
+        </header>
+
+        <form
+          className="ask-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void ask();
+          }}
+        >
+          <Sparkles size={18} />
+          <input
+            autoFocus
+            value={question}
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="Ask about late submissions, missing files, pending signatures..."
+          />
+          <button className="primary-button compact" type="submit" disabled={busy}>
+            {busy ? "Thinking..." : "Ask"} <ArrowRight size={15} />
+          </button>
+        </form>
+
+        {!answer && (
+          <div className="ask-suggestions">
+            {suggestions.map((item) => (
+              <button key={item} type="button" onClick={() => void ask(item)}>
+                {item}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {answer && (
+          <article className="ask-answer">
+            <p className="eyebrow">TTRT answer</p>
+            <p>{answer}</p>
+            {targetId && (
+              <button className="text-button" type="button" onClick={() => onOpenSubmission(targetId)}>
+                Open related submission <ArrowRight size={15} />
+              </button>
+            )}
+          </article>
+        )}
+      </section>
+    </div>
+  );
+}
+
+function NotificationPopover({
   notifications,
   onOpen,
 }: {
@@ -861,15 +1368,17 @@ function NotificationsPage({
   onOpen: (notification: TtrtNotification) => void;
 }) {
   return (
-    <div className="page-stack">
-      <PageTitle
-        eyebrow="Notifications"
-        title="Project alerts and reviewer assignments"
-        subtitle="When a project is submitted, stakeholders receive a link back to the project package and its form details."
-      />
-      <section className="panel notification-list">
+    <div className="notification-popover" role="dialog" aria-label="TTRT notifications">
+      <div className="notification-popover-header">
+        <div>
+          <p className="eyebrow">Notifications</p>
+          <strong>Project alerts</strong>
+        </div>
+        <Pill label={`${notifications.filter((item) => !item.read).length} unread`} tone={notifications.some((item) => !item.read) ? "amber" : "green"} />
+      </div>
+      <div className="notification-list compact-notification-list">
         {notifications.length === 0 ? (
-          <div className="empty-upload-state">
+          <div className="empty-upload-state compact-empty">
             <Bell size={18} />
             <strong>No notifications yet</strong>
             <p>Submit a project to generate the first stakeholder alert.</p>
@@ -891,7 +1400,7 @@ function NotificationsPage({
             </button>
           ))
         )}
-      </section>
+      </div>
     </div>
   );
 }
@@ -935,26 +1444,28 @@ function Login({ onSubmit }: { onSubmit: () => void }) {
 }
 
 function Dashboard({
-  selected,
   submissions: visibleSubmissions,
+  currentUser,
   setPage,
   setSelectedId,
   onOpenSubmit,
-  onClarification,
-  onGenerateReport,
 }: {
-  selected: Submission;
   submissions: Submission[];
+  currentUser: TtrtUser;
   setPage: (page: Page) => void;
   setSelectedId: (id: string) => void;
   onOpenSubmit: () => void;
-  onClarification: (submissionId: string) => void;
-  onGenerateReport: (kind: string) => void;
 }) {
-  const actionItems = visibleSubmissions.filter((item) => item.stage !== "Released" && item.stage !== "Rejected").slice(0, 4);
+  const activeSubmissions = visibleSubmissions.filter((item) => !isSubmissionClosed(item));
+  const myActionItems = activeSubmissions
+    .filter((item) => isActionRequiredForUser(item, currentUser))
+    .sort((left, right) => actionPriority(left) - actionPriority(right));
+  const watchedItems = activeSubmissions
+    .filter((item) => !isActionRequiredForUser(item, currentUser))
+    .slice(0, Math.max(0, 5 - myActionItems.length));
+  const actionItems = [...myActionItems, ...watchedItems].slice(0, 7);
   const waitingSignatures = visibleSubmissions.reduce((total, item) => total + signatureCounts(item).pending, 0);
   const missingEvidence = visibleSubmissions.reduce((total, item) => total + requirementCounts(item).fail + requirementCounts(item).warning, 0);
-  const activeSubmissions = visibleSubmissions.filter((item) => item.stage !== "Released" && item.stage !== "Rejected");
   const releasedSubmissions = visibleSubmissions.filter((item) => item.stage === "Released");
   const overdueSubmissions = activeSubmissions.filter((item) => {
     const due = parseDisplayDate(item.dueOn);
@@ -964,32 +1475,19 @@ function Dashboard({
     ? Math.round((releasedSubmissions.length / visibleSubmissions.length) * 100)
     : 0;
   const submittedThisMonth = visibleSubmissions.filter((item) => item.submittedOn.includes("May") || item.submittedOn.includes("Jun")).length;
-  const averageTargetDays = Math.round(
-    visibleSubmissions.reduce((total, item) => {
-      const submitted = parseDisplayDate(item.submittedOn);
-      const due = parseDisplayDate(item.dueOn);
-      return total + (submitted && due ? Math.max(1, Math.round((due.getTime() - submitted.getTime()) / 86400000)) : 0);
-    }, 0) / Math.max(1, visibleSubmissions.length),
-  );
+  const riskCount = overdueSubmissions.length + missingEvidence;
   const decisionSplit = [
     { label: "Approved", count: visibleSubmissions.filter((item) => item.decision === "Approve").length, color: "#64b77d" },
     { label: "Approved with comments", count: visibleSubmissions.filter((item) => item.decision === "Conditional approval").length, color: "#2f6ea8" },
     { label: "Pending / waiting", count: visibleSubmissions.filter((item) => item.decision === "Pending").length, color: "#e8b64f" },
     { label: "Rejected", count: visibleSubmissions.filter((item) => item.decision === "Reject").length, color: "#c8574f" },
   ];
-  const stageLoad = [
-    { label: "Screening", count: visibleSubmissions.filter((item) => item.stage === "Initial screening" || item.stage === "Returned to PM").length, tone: "blue" as const },
-    { label: "Technical", count: visibleSubmissions.filter((item) => item.stage === "Technical review" || item.stage === "PM response").length, tone: "amber" as const },
-    { label: "Decision", count: visibleSubmissions.filter((item) => item.stage === "Final recommendation" || item.stage === "Executive approval").length, tone: "purple" as const },
-    { label: "Closed", count: visibleSubmissions.filter((item) => item.stage === "Released" || item.stage === "Rejected").length, tone: "green" as const },
-  ];
-
   return (
     <div className="page-stack">
       <PageTitle
         eyebrow="TTRT overview"
         title="Project review without circulation delays"
-        subtitle="Track the submitted project, see exactly where it sits in the process, and move the package from screening to final closure without email drift."
+        subtitle="Track submitted projects, see exactly where each package sits in the process, and surface only the actions owned by the logged-in role."
         actions={
           <>
             <button className="primary-button compact" type="button" onClick={onOpenSubmit}><Plus size={16} />Submit project</button>
@@ -998,29 +1496,69 @@ function Dashboard({
         }
       />
 
-      <section className="ttrt-progress-dashboard">
-        <div className="ttrt-progress-main">
+      <section className="ttrt-overview-dashboard">
+        <div className="overview-kpi-panel">
           <div className="section-heading tight">
             <div>
               <p className="eyebrow">Latest TTRT submissions</p>
-              <h2>Progress and review health</h2>
+              <h2>Review health</h2>
             </div>
             <Pill label={`${completion}% complete`} tone={completion >= 70 ? "green" : completion >= 40 ? "amber" : "blue"} />
           </div>
-          <div className="ttrt-kpi-tiles">
-            <ProgressKpi label="Total submissions" value={String(visibleSubmissions.length)} helper="All project packages" tone="blue" progress={100} />
-            <ProgressKpi label="Released" value={String(releasedSubmissions.length)} helper="Closed and archived" tone="green" progress={completion} />
-            <ProgressKpi label="Active queue" value={String(activeSubmissions.length)} helper="Being reviewed now" tone="amber" progress={Math.min(100, activeSubmissions.length * 24)} />
-            <ProgressKpi label="Due / evidence risk" value={String(overdueSubmissions.length + missingEvidence)} helper={`${overdueSubmissions.length} overdue, ${missingEvidence} evidence gaps`} tone={overdueSubmissions.length + missingEvidence > 0 ? "red" : "green"} progress={Math.max(8, Math.min(100, (overdueSubmissions.length + missingEvidence) * 16))} />
-          </div>
-          <div className="ttrt-chart-row">
-            <StageLoadChart stages={stageLoad} total={Math.max(1, visibleSubmissions.length)} />
-            <MiniTrendChart submittedThisMonth={submittedThisMonth} averageTargetDays={averageTargetDays} />
+          <div className="metric-grid overview-metric-grid">
+            <MetricCard icon={Inbox} label="Total submissions" value={String(visibleSubmissions.length)} helper="All project packages" tone="blue" progress={100} />
+            <MetricCard icon={CheckCircle2} label="Released" value={String(releasedSubmissions.length)} helper="Closed and archived" tone="green" progress={completion} />
+            <MetricCard icon={Clock3} label="Submitted this month" value={String(submittedThisMonth)} helper={`${activeSubmissions.length} active in review`} tone="amber" progress={Math.min(100, submittedThisMonth * 16)} />
+            <MetricCard icon={AlertTriangle} label="Due / evidence risk" value={String(riskCount)} helper={`${overdueSubmissions.length} overdue, ${missingEvidence} evidence gaps`} tone={riskCount > 0 ? "red" : "green"} progress={Math.max(4, Math.min(100, riskCount * 16))} />
           </div>
         </div>
 
         <DecisionSplitCard split={decisionSplit} total={Math.max(1, visibleSubmissions.length)} />
       </section>
+
+      <div className="dashboard-grid overview-action-grid">
+        <section className="panel">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Reviewer action queue</p>
+              <h2>Where your action is required</h2>
+            </div>
+            <button className="text-button" type="button" onClick={() => setPage("submissions")}>View all <ArrowRight size={15} /></button>
+          </div>
+          <div className="action-list">
+            {actionItems.length === 0 ? (
+              <div className="empty-upload-state compact-empty">
+                <CheckCircle2 size={18} />
+                <strong>No assigned action right now</strong>
+                <p>When a package reaches a step owned by {currentUser.role.toLowerCase()}, it will appear here first.</p>
+              </div>
+            ) : actionItems.map((item) => {
+              const assignedToMe = isActionRequiredForUser(item, currentUser);
+              return (
+                <button
+                  className={`action-row ${assignedToMe ? "assigned" : ""}`}
+                  type="button"
+                  key={`${item.id}-${item.code}`}
+                  onClick={() => {
+                    setSelectedId(item.id);
+                    setPage("submissions");
+                  }}
+                >
+                  <div>
+                    <strong>{item.code}</strong>
+                    <p>{assignedToMe ? actionReasonForUser(item, currentUser) : item.nextAction}</p>
+                  </div>
+                  <div className="row-meta">
+                    {assignedToMe && <Pill label="Your action" tone="amber" />}
+                    <Pill label={item.stage} tone={stageTone(item.stage)} />
+                    <span>{item.slaRemaining}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
 
       <section className="flow-card process-card">
         <div className="section-heading">
@@ -1032,55 +1570,6 @@ function Dashboard({
         </div>
         <TtrtProcessMap />
       </section>
-
-      <div className="dashboard-grid">
-        <section className="panel">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Reviewer action queue</p>
-              <h2>What needs follow-up now</h2>
-            </div>
-            <button className="text-button" type="button" onClick={() => setPage("submissions")}>View all <ArrowRight size={15} /></button>
-          </div>
-          <div className="action-list">
-            {actionItems.map((item) => (
-              <button
-                className="action-row"
-                type="button"
-                key={item.id}
-                onClick={() => {
-                  setSelectedId(item.id);
-                  setPage("submissions");
-                }}
-              >
-                <div>
-                  <strong>{item.code}</strong>
-                  <p>{item.nextAction}</p>
-                </div>
-                <div className="row-meta">
-                  <Pill label={item.stage} tone={stageTone(item.stage)} />
-                  <span>{item.slaRemaining}</span>
-                </div>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="panel highlight">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">AI screening opinion</p>
-              <h2>{selected.code}</h2>
-            </div>
-            <Pill label={selected.priority} tone={selected.priority === "Critical" ? "red" : selected.priority === "High" ? "amber" : "green"} />
-          </div>
-          <p className="large-copy">{selected.aiSummary}</p>
-          <div className="decision-actions">
-            <button className="primary-button" onClick={() => onClarification(selected.id)}><Send size={16} />Send PM clarification</button>
-            <button className="secondary-button" onClick={() => onGenerateReport("TTRT recommendation report")}><FileCheck2 size={16} />Prepare report</button>
-          </div>
-        </section>
-      </div>
     </div>
   );
 }
@@ -1088,6 +1577,7 @@ function Dashboard({
 function SubmissionsPage({
   submissions: visibleSubmissions,
   selected,
+  currentUser,
   setSelectedId,
   projectFiles,
   onUpload,
@@ -1097,9 +1587,12 @@ function SubmissionsPage({
   onAddComment,
   onCommentState,
   onUpdateSubmission,
+  onSign,
+  onRemindSignature,
 }: {
   submissions: Submission[];
   selected: Submission;
+  currentUser: TtrtUser;
   setSelectedId: (id: string) => void;
   projectFiles: ProjectFile[];
   onUpload: (submissionId: string, files: FileList | null) => void;
@@ -1109,11 +1602,16 @@ function SubmissionsPage({
   onAddComment: (submissionId: string, comment: string) => void;
   onCommentState: (submissionId: string, index: number, state: CommentState) => void;
   onUpdateSubmission: (submissionId: string, payload: ProjectUpdatePayload) => void;
+  onSign: (submissionId: string, signatureKey: string) => void;
+  onRemindSignature: (submissionId: string, signature: SignatureRecord) => void;
 }) {
   const selectedFiles = projectFiles.filter((file) => file.submissionId === selected.id);
   const [filterMode, setFilterMode] = useState<"all" | "active" | "needsAttention" | "closed">("all");
   const [editing, setEditing] = useState(false);
   const [commentDraft, setCommentDraft] = useState("");
+  const selectedRequirements = requirementCounts(selected);
+  const selectedSignatures = signatureCounts(selected);
+  const selectedOpenComments = selected.comments.filter((comment) => comment.state === "open" || comment.state === "approvedWithComments");
   const queue = visibleSubmissions.filter((item) => {
     if (filterMode === "active") return item.stage !== "Released" && item.stage !== "Rejected";
     if (filterMode === "closed") return item.stage === "Released" || item.stage === "Rejected";
@@ -1169,8 +1667,8 @@ function SubmissionsPage({
     <div className="page-stack">
       <PageTitle
         eyebrow="Submissions"
-        title="One workspace for each project package"
-        subtitle="Select a project, review completeness, inspect comments, and take the next reviewer action without changing tabs."
+        title="Submission decision workspace"
+        subtitle="Select a project package and see the executive decision brief first. Operational evidence remains available when needed."
         actions={
           <>
             <button className="primary-button compact" type="button" onClick={onOpenSubmit}><Plus size={16} />Submit project</button>
@@ -1194,6 +1692,7 @@ function SubmissionsPage({
                   <p>{item.code} / {item.sector} / {item.round}</p>
                 </div>
                 <div className="submission-card-footer">
+                  {isActionRequiredForUser(item, currentUser) && <Pill label="Your action" tone="amber" />}
                   <Pill label={item.stage} tone={stageTone(item.stage)} />
                   <span>{item.slaRemaining}</span>
                 </div>
@@ -1220,63 +1719,192 @@ function SubmissionsPage({
             <ProjectEditForm selected={selected} onSubmit={handleProjectUpdate} onCancel={() => setEditing(false)} />
           )}
           <ProjectStepTimeline selected={selected} compact />
-          <div className="detail-summary-grid">
-            <InfoBlock label="Project manager" value={selected.manager} helper={selected.managerEmail} />
-            <InfoBlock label="Sector / division" value={selected.sector} helper={selected.division} />
-            <InfoBlock label="Duration" value={selected.duration} helper={selected.estimateCost} />
-            <InfoBlock label="Bottleneck" value={selected.bottleneck} helper={`Due ${selected.dueOn}`} />
-          </div>
-          <section className="subsection">
-            <h3>Scope of work</h3>
-            <p>{selected.scope}</p>
-          </section>
-          <ProjectCommentsPanel
+          <ExecutiveDecisionBrief
             selected={selected}
-            commentDraft={commentDraft}
-            setCommentDraft={setCommentDraft}
-            onSubmit={submitProjectComment}
-            onCommentState={onCommentState}
+            files={selectedFiles}
+            currentUser={currentUser}
+            requirementSummary={selectedRequirements}
+            signatureSummary={selectedSignatures}
+            openComments={selectedOpenComments.length}
+            onDecision={onDecision}
+            onAddComment={onAddComment}
           />
-          <section className="subsection">
-            <DocumentPackagePanel
+          <details className="operational-details">
+            <summary>
+              <span>Operational package details</span>
+              <small>Form, scope, comments, documents, signatures, and input checks</small>
+            </summary>
+            <div className="detail-summary-grid">
+              <InfoBlock label="Project manager" value={selected.manager} helper={selected.managerEmail} />
+              <InfoBlock label="Sector / division" value={selected.sector} helper={selected.division} />
+              <InfoBlock label="Duration" value={selected.duration} helper={selected.estimateCost} />
+              <InfoBlock label="Bottleneck" value={selected.bottleneck} helper={`Due ${selected.dueOn}`} />
+            </div>
+            <section className="subsection">
+              <h3>Scope of work</h3>
+              <p>{selected.scope}</p>
+            </section>
+            <ProjectCommentsPanel
               selected={selected}
-              files={selectedFiles}
-              onUpload={onUpload}
-              onRemoveFile={onRemoveFile}
-              compact
+              commentDraft={commentDraft}
+              setCommentDraft={setCommentDraft}
+              onSubmit={submitProjectComment}
+              onCommentState={onCommentState}
             />
-          </section>
-          <section className="subsection">
-            <div className="section-heading tight">
-              <h3>Input checks</h3>
-              <Pill label={`${requirementCounts(selected).fail + requirementCounts(selected).warning} needs attention`} tone={requirementCounts(selected).fail > 0 ? "red" : requirementCounts(selected).warning > 0 ? "amber" : "green"} />
-            </div>
-            <div className="check-grid">
-              {selected.documents.map((doc) => <DocumentCheckCard key={doc.name} doc={doc} />)}
-            </div>
-          </section>
-          <section className="subsection">
-            <div className="section-heading tight">
-              <h3>AI opinion and next decision</h3>
-              <Pill label="auditable recommendation" tone="green" />
-            </div>
-            <div className="ai-opinion">
-              <Sparkles size={18} />
-              <div>
-                <strong>{selected.nextAction}</strong>
-                <p>{selected.aiSummary}</p>
+            <section className="subsection">
+              <DocumentPackagePanel
+                selected={selected}
+                files={selectedFiles}
+                onUpload={onUpload}
+                onRemoveFile={onRemoveFile}
+                compact
+              />
+            </section>
+            <section className="subsection">
+              <div className="section-heading tight">
+                <div>
+                  <h3>Signature chain</h3>
+                  <p className="muted-line">Signatures stay attached to the selected project package and drive final release.</p>
+                </div>
+                <Pill label={`${selectedSignatures.signed}/${selected.signatures.length} signed`} tone={selectedSignatures.pending > 0 ? "amber" : "green"} />
               </div>
-            </div>
-            <div className="decision-actions sticky-actions">
-              <button className="primary-button" type="button" onClick={() => onDecision(selected.id, "approve")}><CheckCircle2 size={16} />Approve</button>
-              <button className="secondary-button amber" type="button" onClick={() => onDecision(selected.id, "conditional")}><PenLine size={16} />Conditional approval</button>
-              <button className="secondary-button" type="button" onClick={() => onDecision(selected.id, "return")}><Mail size={16} />Return to PM</button>
-              <button className="secondary-button danger" type="button" onClick={() => onDecision(selected.id, "reject")}><XCircle size={16} />Reject</button>
-            </div>
-          </section>
+              <div className="signature-grid project-signature-grid">
+                {selected.signatures.map((signature) => (
+                  <SignatureCard
+                    key={`${signature.name}-${signature.role}`}
+                    signature={signature}
+                    onSign={() => onSign(selected.id, `${signature.name}-${signature.role}`)}
+                    onRemind={() => onRemindSignature(selected.id, signature)}
+                  />
+                ))}
+              </div>
+            </section>
+            <section className="subsection">
+              <div className="section-heading tight">
+                <h3>Input checks</h3>
+                <Pill label={`${selectedRequirements.fail + selectedRequirements.warning} needs attention`} tone={selectedRequirements.fail > 0 ? "red" : selectedRequirements.warning > 0 ? "amber" : "green"} />
+              </div>
+              <div className="check-grid">
+                {selected.documents.map((doc) => <DocumentCheckCard key={doc.name} doc={doc} />)}
+              </div>
+            </section>
+          </details>
         </section>
       </div>
     </div>
+  );
+}
+
+function ExecutiveDecisionBrief({
+  selected,
+  files,
+  currentUser,
+  requirementSummary,
+  signatureSummary,
+  openComments,
+  onDecision,
+  onAddComment,
+}: {
+  selected: Submission;
+  files: ProjectFile[];
+  currentUser: TtrtUser;
+  requirementSummary: ReturnType<typeof requirementCounts>;
+  signatureSummary: ReturnType<typeof signatureCounts>;
+  openComments: number;
+  onDecision: (submissionId: string, action: "approve" | "conditional" | "return" | "reject") => void;
+  onAddComment: (submissionId: string, comment: string) => void;
+}) {
+  const [reviewComment, setReviewComment] = useState("");
+  const aiRecommendation = divisionAiRecommendation(selected, currentUser, files);
+  const aiPick = ttrtAiPick(selected, currentUser, requirementSummary, signatureSummary, openComments);
+  const canDecide = canRecordTtrtDecision(currentUser);
+  const isExecutive = currentUser.role === "Executive approver";
+  const actionRequired = isActionRequiredForUser(selected, currentUser);
+  const decisionActions: Array<{ action: TtrtDecisionAction; label: string; icon: LucideIcon; className: string }> = canDecide
+    ? isExecutive
+      ? [
+          { action: "approve", label: "Approve", icon: CheckCircle2, className: "primary-button" },
+          { action: "conditional", label: "Conditional approval", icon: PenLine, className: "secondary-button amber" },
+          { action: "reject", label: "Reject", icon: XCircle, className: "secondary-button danger" },
+        ]
+      : [
+          { action: "approve", label: "Approve recommendation", icon: CheckCircle2, className: "primary-button" },
+          { action: "conditional", label: "Conditional approval", icon: PenLine, className: "secondary-button amber" },
+          { action: "return", label: "Return to PM", icon: Mail, className: "secondary-button" },
+        ]
+    : [];
+
+  function submitAiComment() {
+    const clean = reviewComment.trim();
+    onAddComment(
+      selected.id,
+      clean || `${divisionReviewLens(currentUser)} review comment: ${aiRecommendation.recommendedAction}. ${aiRecommendation.summary}`,
+    );
+    setReviewComment("");
+  }
+
+  return (
+    <section className="executive-decision-brief">
+      <div className="ai-reco-header">
+        <div className="executive-brief-main">
+          <p className="eyebrow">AI recommendation for {divisionReviewLens(currentUser)}</p>
+          <h3>{aiRecommendation.title}</h3>
+          <p>{aiRecommendation.summary}</p>
+        </div>
+        <div className="ai-reco-status">
+          <Pill label={actionRequired ? "Your action" : "Watching"} tone={actionRequired ? "amber" : "green"} />
+          <span>{selected.stage}</span>
+        </div>
+      </div>
+
+      <div className="ai-reco-summary-row">
+        <InfoBlock label="AI recommendation" value={aiRecommendation.recommendedAction} helper={aiRecommendation.focus} />
+        <InfoBlock label="Evidence" value={`${requirementSummary.pass}/${selected.documents.length} checks passed`} helper={`${requirementSummary.fail + requirementSummary.warning} gaps or warnings`} />
+        <InfoBlock label="Signatures" value={`${signatureSummary.signed}/${selected.signatures.length} signed`} helper={`${signatureSummary.pending} pending`} />
+      </div>
+
+      {!canDecide && (
+        <div className="review-comment-inline">
+          <div>
+            <p className="eyebrow">Reviewer input</p>
+            <h4>{divisionReviewLens(currentUser)} comment</h4>
+            <p>At this stage, this role records its division review. Final approval or rejection stays with the authorized decision roles.</p>
+          </div>
+          <textarea
+            value={reviewComment}
+            onChange={(event) => setReviewComment(event.target.value)}
+            placeholder={`Write ${divisionReviewLens(currentUser)} comment...`}
+          />
+        </div>
+      )}
+
+      <div className="decision-actions executive-actions simplified-actions">
+        {!canDecide ? (
+          <button className="primary-button ai-picked-button" type="button" onClick={submitAiComment}>
+            <span className="ai-pick-badge">AI pick</span>
+            <PenLine size={16} />
+            {aiPick.label}
+          </button>
+        ) : (
+          decisionActions.map(({ action, label, icon: Icon, className }) => {
+            const picked = aiPick.kind === action;
+            return (
+              <button
+                key={action}
+                className={`${className} ${picked ? "ai-picked-button" : ""}`}
+                type="button"
+                onClick={() => onDecision(selected.id, action)}
+              >
+                {picked && <span className="ai-pick-badge">AI pick</span>}
+                <Icon size={16} />
+                {label}
+              </button>
+            );
+          })
+        )}
+        <p className="ai-pick-helper">{aiPick.helper}</p>
+      </div>
+    </section>
   );
 }
 
@@ -1409,7 +2037,7 @@ function ProjectCommentsPanel({
           <div className="empty-upload-state compact-empty">
             <FileText size={18} />
             <strong>No comments yet</strong>
-            <p>Add the first project comment from here. It will also appear in the Review Board.</p>
+            <p>Add the first project comment from here. It will stay attached to this project history.</p>
           </div>
         ) : (
           selected.comments.map((comment, index) => (
@@ -1801,7 +2429,7 @@ function UsersPage({ users, addUser, patchUser }: { users: TtrtUser[]; addUser: 
         <div className="user-table-header">
           <span>User</span>
           <span>Role</span>
-          <span>Scope</span>
+          <span>Division / lens</span>
           <span>Status</span>
         </div>
         {users.map((user) => (
@@ -1820,7 +2448,7 @@ function UsersPage({ users, addUser, patchUser }: { users: TtrtUser[]; addUser: 
               </select>
             </label>
             <label className="user-field">
-              <span>Scope</span>
+              <span>Division / review lens</span>
               <input className="user-control" value={user.scope} onChange={(event) => patchUser(user.id, { scope: event.target.value })} />
             </label>
             <button className={`toggle ${user.status === "Active" ? "on" : ""}`} type="button" onClick={() => patchUser(user.id, { status: user.status === "Active" ? "Pending" : "Active" })}>
@@ -2198,6 +2826,171 @@ function decisionTone(decision: Submission["decision"]): StageTone {
   if (decision === "Reject") return "red";
   if (decision === "Conditional approval") return "amber";
   return "blue";
+}
+
+async function askTtrtAi(question: string, visibleSubmissions: Submission[], projectFiles: ProjectFile[], currentUser: TtrtUser): Promise<string> {
+  if (aiEndpoint) {
+    try {
+      const prompt = buildTtrtAiPrompt(question, visibleSubmissions, projectFiles, currentUser);
+      const payload = aiEndpoint.includes("/api/agents/ask")
+        ? { prompt, provider: aiProvider, locale: "en" }
+        : { app: "ttrt", question, prompt, context: ttrtAiContext(visibleSubmissions, projectFiles, currentUser) };
+      const response = await fetch(aiEndpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      if (!response.ok) throw new Error(`AI endpoint returned ${response.status}`);
+      const answer = extractAiAnswer(await response.json());
+      if (answer) return answer;
+    } catch {
+      // Keep the demo useful even if the external AI service is unavailable.
+    }
+  }
+
+  return localTtrtAnswer(question, visibleSubmissions, projectFiles, currentUser);
+}
+
+function buildTtrtAiPrompt(question: string, visibleSubmissions: Submission[], projectFiles: ProjectFile[], currentUser: TtrtUser): string {
+  return [
+    "You are the TTRT Review Cockpit assistant for Abu Dhabi Mobility / ITC.",
+    "Answer using only the provided TTRT context. Be concrete, concise, and operational.",
+    "If a project or person is relevant, cite the submission code and the next action.",
+    `The logged-in user is ${currentUser.name}, role ${currentUser.role}, division/review lens ${divisionReviewLens(currentUser)}.`,
+    "Tailor recommendations to that user's division lens. Do not give every reviewer the same generic recommendation.",
+    "Do not invent project records, documents, or approvals.",
+    "",
+    `Question: ${question}`,
+    "",
+    "TTRT context:",
+    ttrtAiContext(visibleSubmissions, projectFiles, currentUser),
+  ].join("\n");
+}
+
+function ttrtAiContext(visibleSubmissions: Submission[], projectFiles: ProjectFile[], currentUser?: TtrtUser): string {
+  return visibleSubmissions.map((submission) => {
+    const docCounts = requirementCounts(submission);
+    const signatureSummary = signatureCounts(submission);
+    const files = projectFiles.filter((file) => file.submissionId === submission.id);
+    const openComments = submission.comments.filter((comment) => comment.state === "open");
+    const divisionRecommendation = currentUser ? divisionAiRecommendation(submission, currentUser, files) : null;
+    return [
+      `- ${submission.code}: ${submission.name}`,
+      `  Stage: ${submission.stage}; decision: ${submission.decision}; priority: ${submission.priority}; SLA: ${submission.slaRemaining}`,
+      `  PM: ${submission.manager}; sector: ${submission.sector}; division: ${submission.division}`,
+      `  Evidence checks: ${docCounts.pass} pass, ${docCounts.warning} warning, ${docCounts.fail} fail`,
+      `  Signatures: ${signatureSummary.signed} signed, ${signatureSummary.pending} pending, ${signatureSummary.blocked} blocked`,
+      `  Open comments: ${openComments.length}`,
+      `  Uploaded files: ${files.length ? files.map((file) => file.name).join(", ") : "none"}`,
+      `  Bottleneck: ${submission.bottleneck}`,
+      `  Next action: ${submission.nextAction}`,
+      divisionRecommendation ? `  Division-specific recommendation for ${divisionReviewLens(currentUser!)}: ${divisionRecommendation.title}; ${divisionRecommendation.summary}` : "",
+    ].join("\n");
+  }).join("\n");
+}
+
+function extractAiAnswer(data: unknown): string {
+  if (!data || typeof data !== "object") return "";
+  const record = data as Record<string, unknown>;
+  const direct = record.answer ?? record.message ?? record.text ?? record.response ?? record.output;
+  if (typeof direct === "string") return direct.trim();
+  if (record.result && typeof record.result === "object") {
+    const result = record.result as Record<string, unknown>;
+    const nested = result.answer ?? result.message ?? result.text ?? result.output;
+    if (typeof nested === "string") return nested.trim();
+  }
+  return "";
+}
+
+function localTtrtAnswer(question: string, visibleSubmissions: Submission[], projectFiles: ProjectFile[], currentUser: TtrtUser): string {
+  const normalized = question.toLowerCase();
+  const active = visibleSubmissions.filter((submission) => submission.stage !== "Released" && submission.stage !== "Rejected");
+
+  if (normalized.includes("my") || normalized.includes("division") || normalized.includes("assigned") || normalized.includes("follow")) {
+    const queue = active
+      .filter((submission) => isActionRequiredForUser(submission, currentUser))
+      .sort((a, b) => actionPriority(a) - actionPriority(b))
+      .slice(0, 5);
+    if (!queue.length) return `${currentUser.name} has no active TTRT action right now for the ${divisionReviewLens(currentUser)} review lens.`;
+    return queue.map((submission, index) => {
+      const recommendation = divisionAiRecommendation(submission, currentUser, projectFiles.filter((file) => file.submissionId === submission.id));
+      return `${index + 1}. ${submission.code}: ${actionReasonForUser(submission, currentUser)} AI recommendation: ${recommendation.recommendedAction} (${recommendation.focus}).`;
+    }).join("\n");
+  }
+
+  if (normalized.includes("sign")) {
+    const pending = visibleSubmissions
+      .map((submission) => ({
+        submission,
+        names: submission.signatures.filter((signature) => signature.status === "pending").map((signature) => signature.name),
+      }))
+      .filter((item) => item.names.length > 0);
+    if (!pending.length) return "All visible TTRT submissions have their signature chain completed.";
+    return pending.map(({ submission, names }) => `${submission.code}: pending signatures from ${names.join(", ")}. Next action: ${submission.nextAction}`).join("\n");
+  }
+
+  if (normalized.includes("evidence") || normalized.includes("document") || normalized.includes("missing") || normalized.includes("file")) {
+    const gaps = visibleSubmissions
+      .map((submission) => ({
+        submission,
+        checks: submission.documents.filter((document) => document.state === "fail" || document.state === "warning"),
+        files: projectFiles.filter((file) => file.submissionId === submission.id),
+      }))
+      .filter((item) => item.checks.length > 0 || item.files.length === 0);
+    if (!gaps.length) return "No evidence gaps are currently visible in the loaded TTRT submissions.";
+    return gaps.map(({ submission, checks, files }) => {
+      const issues = checks.length ? checks.map((check) => `${check.name}: ${check.note}`).join("; ") : "No uploaded files attached to this record.";
+      return `${submission.code}: ${issues} Uploaded files: ${files.length}.`;
+    }).join("\n");
+  }
+
+  if (normalized.includes("late") || normalized.includes("sla") || normalized.includes("due") || normalized.includes("follow")) {
+    const queue = active
+      .filter((submission) => userDivisionMatchesSubmission(currentUser, submission))
+      .map((submission) => ({ submission, due: parseDisplayDate(submission.dueOn)?.getTime() ?? Number.MAX_SAFE_INTEGER }))
+      .sort((a, b) => a.due - b.due)
+      .slice(0, 5);
+    if (!queue.length) return `There are no active TTRT submissions requiring SLA follow-up for ${currentUser.name}'s ${divisionReviewLens(currentUser)} lens.`;
+    return queue.map(({ submission }, index) =>
+      `${index + 1}. ${submission.code} (${submission.stage}) - SLA ${submission.slaRemaining}; bottleneck: ${submission.bottleneck}. Next action: ${submission.nextAction}`,
+    ).join("\n");
+  }
+
+  if (normalized.includes("comment") || normalized.includes("reviewer")) {
+    const rows = visibleSubmissions
+      .map((submission) => ({
+        submission,
+        comments: submission.comments.filter((comment) => comment.state === "open" || comment.state === "approvedWithComments"),
+      }))
+      .filter((item) => item.comments.length > 0);
+    if (!rows.length) return "There are no open or approved-with-comments reviewer comments in the current TTRT view.";
+    return rows.map(({ submission, comments }) =>
+      `${submission.code}: ${comments.length} reviewer comment(s) need traceability. ${comments.map((comment) => `${comment.reviewer}: ${comment.comment}`).join(" ")}`,
+    ).join("\n");
+  }
+
+  if (normalized.includes("active") || normalized.includes("status") || normalized.includes("stage") || normalized.includes("summarize")) {
+    if (!visibleSubmissions.length) return "No TTRT submissions are loaded.";
+    return visibleSubmissions.map((submission) =>
+      `${submission.code}: ${submission.name} is at ${submission.stage}, decision ${submission.decision}, priority ${submission.priority}. Next action: ${submission.nextAction}`,
+    ).join("\n");
+  }
+
+  const activeCount = active.length;
+  const evidenceGaps = visibleSubmissions.reduce((total, submission) => {
+    const counts = requirementCounts(submission);
+    return total + counts.warning + counts.fail;
+  }, 0);
+  const pendingSignatures = visibleSubmissions.reduce((total, submission) => total + signatureCounts(submission).pending, 0);
+  const myActions = active.filter((submission) => isActionRequiredForUser(submission, currentUser)).length;
+  return `TTRT currently shows ${visibleSubmissions.length} submission(s), ${activeCount} active review(s), ${evidenceGaps} evidence gap(s), and ${pendingSignatures} pending signature(s). For ${currentUser.name}'s ${divisionReviewLens(currentUser)} lens, ${myActions} package(s) need action.`;
+}
+
+function resolveTtrtTarget(question: string, answer: string, visibleSubmissions: Submission[]): Submission | undefined {
+  const text = `${question} ${answer}`.toLowerCase();
+  return visibleSubmissions.find((submission) => text.includes(submission.code.toLowerCase()))
+    ?? visibleSubmissions.find((submission) => text.includes(submission.name.toLowerCase()))
+    ?? visibleSubmissions.find((submission) => submission.stage !== "Released" && submission.stage !== "Rejected");
 }
 
 function parseDisplayDate(value: string): Date | null {
