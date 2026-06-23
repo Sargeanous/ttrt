@@ -11,6 +11,7 @@ import {
   FileText,
   Filter,
   Inbox,
+  Languages,
   LayoutDashboard,
   Library,
   LogOut,
@@ -185,7 +186,408 @@ const storageKeys = {
   notifications: "ttrt.notifications.v2",
   rules: "ttrt.rules.v2",
   currentUser: "ttrt.currentUser.v1",
+  language: "ttrt.language.v1",
 };
+
+type TtrtLanguage = "en" | "ar";
+
+const ttrtOriginalText = new WeakMap<Text, string>();
+const i18nAttributes = ["aria-label", "title", "placeholder", "alt"] as const;
+
+const ar: Record<string, string> = {
+  "Project review": "مراجعة المشاريع",
+  Overview: "نظرة عامة",
+  Submissions: "الطلبات",
+  Rules: "القواعد",
+  Admin: "الإدارة",
+  "User Management": "إدارة المستخدمين",
+  Settings: "الإعدادات",
+  "Open overview": "فتح النظرة العامة",
+  "Collapse sidebar": "طي القائمة الجانبية",
+  "Open TTRT navigation": "فتح قائمة TTRT",
+  "Hide TTRT navigation": "إخفاء قائمة TTRT",
+  "Ask TTRT...": "اسأل TTRT...",
+  "Ctrl K": "Ctrl K",
+  "Search submissions, reviewers, sectors...": "ابحث في الطلبات والمراجعين والقطاعات...",
+  "Mobility AI": "Mobility AI",
+  "View TTRT as": "عرض TTRT باسم",
+  Notifications: "الإشعارات",
+  Arabic: "العربية",
+  English: "الإنجليزية",
+  "Switch to Arabic": "التبديل إلى العربية",
+  "Switch to English": "التبديل إلى الإنجليزية",
+  "Sign out": "تسجيل الخروج",
+  Close: "إغلاق",
+  "Close ask panel": "إغلاق لوحة السؤال",
+  "Submit project": "إرسال مشروع",
+  "New TTRT project submission": "طلب مشروع TTRT جديد",
+  "Project name": "اسم المشروع",
+  "Project type": "نوع المشروع",
+  "Manager email": "بريد المدير الإلكتروني",
+  Sector: "القطاع",
+  "Division / section": "الإدارة / القسم",
+  Division: "الإدارة",
+  Budget: "الميزانية",
+  "Start date": "تاريخ البدء",
+  "End date": "تاريخ الانتهاء",
+  "Scope of work": "نطاق العمل",
+  "Development of...": "تطوير...",
+  Name: "الاسم",
+  "name@itc.gov.ae": "name@itc.gov.ae",
+  "Aviation, ITS, Road Safety...": "الطيران، أنظمة النقل الذكية، السلامة المرورية...",
+  "Development of the Abu Dhabi Civil Aviation Strategy (2027 to 2031)": "تطوير استراتيجية الطيران المدني لإمارة أبوظبي (2027 إلى 2031)",
+  "Civil Aviation Strategy": "استراتيجية الطيران المدني",
+  "Strategy and Governance": "الاستراتيجية والحوكمة",
+  "50M": "50 مليون",
+  "Briefly describe the project objective, scope, and expected outputs.": "اكتب بإيجاز هدف المشروع ونطاقه والمخرجات المتوقعة.",
+  "Upload TTRT sheet and supporting package": "تحميل نموذج TTRT وحزمة المستندات الداعمة",
+  "DOCX, PDF, Excel, DWG, or ZIP. Files are attached to the submitted project record.": "DOCX أو PDF أو Excel أو DWG أو ZIP. يتم ربط الملفات بسجل المشروع المقدم.",
+  Cancel: "إلغاء",
+  "Ask TTRT": "اسأل TTRT",
+  "TTRT - Ask anything": "TTRT - اسأل أي شيء",
+  "Ask across submissions, evidence gaps, signatures, comments, SLA, and next actions.": "اسأل عن الطلبات، فجوات الأدلة، التوقيعات، التعليقات، اتفاقيات مستوى الخدمة، والخطوات التالية.",
+  "Ask about late submissions, missing files, pending signatures...": "اسأل عن الطلبات المتأخرة، الملفات الناقصة، التوقيعات المعلقة...",
+  "Thinking...": "جار التفكير...",
+  Ask: "اسأل",
+  "What needs follow-up today?": "ما الذي يحتاج إلى متابعة اليوم؟",
+  "Which submissions have missing evidence?": "ما الطلبات التي لديها أدلة ناقصة؟",
+  "Who still needs to sign?": "من لا يزال بحاجة إلى التوقيع؟",
+  "Summarize the active TTRT projects": "لخص مشاريع TTRT النشطة",
+  "TTRT answer": "إجابة TTRT",
+  "Open related submission": "فتح الطلب المرتبط",
+  "Project alerts": "تنبيهات المشروع",
+  "No notifications yet": "لا توجد إشعارات بعد",
+  "Submit a project to generate the first stakeholder alert.": "أرسل مشروعاً لإنشاء أول تنبيه لأصحاب المصلحة.",
+  Recipients: "المستلمون",
+  "Sign in": "تسجيل الدخول",
+  "TTRT Review Cockpit": "لوحة مراجعة TTRT",
+  Email: "البريد الإلكتروني",
+  Password: "كلمة المرور",
+  Tenant: "المستأجر",
+  "Built by Origen for ITC": "تم بناؤه بواسطة Origen لصالح ITC",
+  "TTRT overview": "نظرة عامة على TTRT",
+  "Project review without circulation delays": "مراجعة المشاريع دون تأخير في التعميم",
+  "Track submitted projects, see exactly where each package sits in the process, and surface only the actions owned by the logged-in role.": "تتبع المشاريع المقدمة، واعرف موقع كل حزمة في العملية، واعرض فقط الإجراءات الخاصة بدور المستخدم الحالي.",
+  "Open submissions": "فتح الطلبات",
+  "Latest TTRT submissions": "أحدث طلبات TTRT",
+  "Review health": "مؤشرات صحة المراجعة",
+  "Active submissions": "الطلبات النشطة",
+  "My action queue": "قائمة إجراءاتي",
+  "Due / evidence risk": "مخاطر الموعد / الأدلة",
+  "Pending signatures": "التوقيعات المعلقة",
+  "ED / TTRT signatures before release": "توقيعات المدير التنفيذي / TTRT قبل الإصدار",
+  "Committee decision split": "توزيع قرارات اللجنة",
+  "Decision mix": "مزيج القرارات",
+  items: "عناصر",
+  Approved: "معتمد",
+  "Approved with comments": "معتمد مع تعليقات",
+  "Pending / waiting": "معلق / قيد الانتظار",
+  Rejected: "مرفوض",
+  "Reviewer action queue": "قائمة إجراءات المراجع",
+  "Where your action is required": "أين يلزم تدخلك",
+  "View all": "عرض الكل",
+  "No assigned action right now": "لا يوجد إجراء مسند حالياً",
+  "Your action": "إجراء مطلوب منك",
+  Queue: "القائمة",
+  All: "الكل",
+  "for": "لـ",
+  submissions: "طلبات",
+  "Submission decision workspace": "مساحة قرار الطلب",
+  "Select a project package and see the executive decision brief first. Operational evidence remains available when needed.": "اختر حزمة مشروع واطلع أولاً على ملخص القرار التنفيذي. تبقى الأدلة التشغيلية متاحة عند الحاجة.",
+  "Close edit": "إغلاق التعديل",
+  "Modify project": "تعديل المشروع",
+  "Operational package details": "تفاصيل الحزمة التشغيلية",
+  "Form, scope, comments, documents, signatures, and input checks": "النموذج، النطاق، التعليقات، المستندات، التوقيعات، وفحوصات الإدخال",
+  "Sector / division": "القطاع / الإدارة",
+  Duration: "المدة",
+  Bottleneck: "العائق",
+  "Project comments": "تعليقات المشروع",
+  "Comments stay attached to this project package and feed the consolidated recommendation.": "تبقى التعليقات مرتبطة بحزمة المشروع وتغذي التوصية الموحدة.",
+  "Leave a comment, clarification, reviewer note, or condition for this project...": "اترك تعليقاً أو توضيحاً أو ملاحظة مراجع أو شرطاً لهذا المشروع...",
+  "Add comment": "إضافة تعليق",
+  "No comments yet": "لا توجد تعليقات بعد",
+  "Add the first project comment from here. It will stay attached to this project history.": "أضف أول تعليق للمشروع من هنا. سيبقى مرتبطاً بسجل هذا المشروع.",
+  Resolve: "حل",
+  "Carry condition": "ترحيل الشرط",
+  "Signature chain": "سلسلة التوقيعات",
+  "Signatures stay attached to the selected project package and drive final release.": "تبقى التوقيعات مرتبطة بحزمة المشروع المختارة وتدعم الإصدار النهائي.",
+  "Input checks": "فحوصات الإدخال",
+  "AI recommendation": "توصية الذكاء الاصطناعي",
+  "AI recommendation for All TTRT divisions": "توصية الذكاء الاصطناعي لجميع إدارات TTRT",
+  "All TTRT divisions review required": "مراجعة جميع إدارات TTRT مطلوبة",
+  "All TTRT divisions": "جميع إدارات TTRT",
+  "Review this package from the All TTRT divisions perspective. The AI found 1 evidence gap, 2 pending signatures, and no uploaded files yet.": "راجع هذه الحزمة من منظور جميع إدارات TTRT. وجد الذكاء الاصطناعي فجوة أدلة واحدة وتوقيعين معلقين ولا توجد ملفات مرفوعة حتى الآن.",
+  Evidence: "الأدلة",
+  Signatures: "التوقيعات",
+  "Reviewer input": "إدخال المراجع",
+  "At this stage, this role records its division review. Final approval or rejection stays with the authorized decision roles.": "في هذه المرحلة، يسجل هذا الدور مراجعة إدارته. يبقى الاعتماد النهائي أو الرفض لدى الأدوار المخولة.",
+  "AI pick": "اختيار الذكاء الاصطناعي",
+  "Approve recommendation": "اعتماد التوصية",
+  "Conditional approval": "اعتماد مشروط",
+  "Return to PM": "إرجاع إلى مدير المشروع",
+  "Missing or weak evidence should be corrected before consuming more reviewer time.": "ينبغي تصحيح الأدلة الناقصة أو الضعيفة قبل استهلاك المزيد من وقت المراجعين.",
+  Approve: "اعتماد",
+  Reject: "رفض",
+  "Project details updated from the project workspace.": "تم تحديث تفاصيل المشروع من مساحة عمل المشروع.",
+  "Project manager": "مدير المشروع",
+  "Submitted on": "تاريخ التقديم",
+  "Due on": "تاريخ الاستحقاق",
+  "Budget / estimate": "الميزانية / التقدير",
+  Priority: "الأولوية",
+  "Review round": "جولة المراجعة",
+  Stage: "المرحلة",
+  Decision: "القرار",
+  "Next action": "الإجراء التالي",
+  "Save changes": "حفظ التغييرات",
+  Documents: "المستندات",
+  "Upload and download TTRT project packages": "تحميل وتنزيل حزم مشاريع TTRT",
+  "Keep the original sheet, supporting evidence, revised submissions, and final TTRT report attached to the project record.": "احتفظ بالنموذج الأصلي والأدلة الداعمة والطلبات المعدلة وتقرير TTRT النهائي ضمن سجل المشروع.",
+  "Project packages": "حزم المشاريع",
+  "Document package": "حزمة المستندات",
+  "Submitted documents": "المستندات المقدمة",
+  Upload: "تحميل",
+  "Expected in package": "المتوقع في الحزمة",
+  "Uploaded files": "الملفات المحملة",
+  "No files uploaded yet": "لم يتم تحميل ملفات بعد",
+  "Upload the TTRT sheet or supporting files, then reviewers can download them from this panel.": "حمّل نموذج TTRT أو الملفات الداعمة، وبعدها يمكن للمراجعين تنزيلها من هذه اللوحة.",
+  Download: "تنزيل",
+  Remove: "إزالة",
+  "Review Board": "لوحة المراجعة",
+  "Technical comments are consolidated before PM response": "يتم توحيد التعليقات الفنية قبل رد مدير المشروع",
+  "The coordinator sees who commented, what remains open, and whether each comment is resolved or carried into conditions.": "يرى المنسق من علّق، وما لا يزال مفتوحاً، وما إذا كان كل تعليق قد حُل أو تم ترحيله كشرط.",
+  "Projects in review": "مشاريع قيد المراجعة",
+  "Consolidated recommendation": "التوصية الموحدة",
+  "Signature chain and ED release tracker": "سلسلة التوقيع وتتبع إصدار المدير التنفيذي",
+  "The app shows who must sign, who is late, and which package is ready for Executive Director approval.": "يعرض التطبيق من يجب أن يوقع، ومن تأخر، وأي حزمة جاهزة لاعتماد المدير التنفيذي.",
+  Packages: "الحزم",
+  "Submission timeline": "الجدول الزمني للطلب",
+  "Business requirements that drive checks and alerts": "متطلبات الأعمال التي تقود الفحوصات والتنبيهات",
+  "Rules stay readable for coordinators: each one says what must be true, what the app should automate, and who owns it.": "تبقى القواعد واضحة للمنسقين: كل قاعدة توضح ما يجب تحققه، وما ينبغي أتمتته، ومن يملكها.",
+  "Save rules": "حفظ القواعد",
+  Requirement: "المتطلب",
+  Automation: "الأتمتة",
+  Owner: "المالك",
+  Active: "نشط",
+  Paused: "متوقف مؤقتاً",
+  Reports: "التقارير",
+  "Generate the right document from the selected project": "إنشاء المستند المناسب من المشروع المختار",
+  "Outputs stay controlled: internal report, PM clarification, signature reminder, and weekly latency view.": "تبقى المخرجات مضبوطة: تقرير داخلي، توضيح لمدير المشروع، تذكير بالتوقيع، وعرض أسبوعي للتأخير.",
+  Generate: "إنشاء",
+  "Selected submission": "الطلب المحدد",
+  "Open project": "فتح المشروع",
+  "User management": "إدارة المستخدمين",
+  "Control who can access TTRT reviews": "التحكم بمن يستطيع الوصول إلى مراجعات TTRT",
+  "Manage coordinators, technical reviewers, supervisors, and read-only users without exposing the technical platform layer.": "إدارة المنسقين والمراجعين الفنيين والمشرفين ومستخدمي القراءة فقط دون كشف طبقة المنصة التقنية.",
+  "Add user": "إضافة مستخدم",
+  User: "المستخدم",
+  Role: "الدور",
+  "Division / lens": "الإدارة / منظور المراجعة",
+  Status: "الحالة",
+  "Division / review lens": "الإدارة / منظور المراجعة",
+  "Profile and notifications": "الملف الشخصي والإشعارات",
+  "Notification defaults for TTRT coordinators, reviewers, PMs, and supervisors.": "إعدادات الإشعارات الافتراضية لمنسقي TTRT والمراجعين ومديري المشاريع والمشرفين.",
+  "Notification mode": "وضع الإشعارات",
+  "Email + in-app": "البريد الإلكتروني + داخل التطبيق",
+  "Default landing": "صفحة الدخول الافتراضية",
+  "Business review workspace": "مساحة مراجعة الأعمال",
+  "Stage load": "توزيع المراحل",
+  "Where work sits now": "أين يوجد العمل الآن",
+  "Monthly pace": "الإيقاع الشهري",
+  "Submission pace trend": "اتجاه وتيرة الطلبات",
+  "this month": "هذا الشهر",
+  "average target window": "متوسط نافذة الهدف",
+  "New Tender": "مناقصة جديدة",
+  "Tender Renewal": "تجديد مناقصة",
+  Variation: "تغيير",
+  "Direct Awarding": "إسناد مباشر",
+  Other: "أخرى",
+  Normal: "عادي",
+  High: "مرتفع",
+  Critical: "حرج",
+  Pending: "معلق",
+  "Initial Review": "المراجعة الأولية",
+  "2nd Review": "المراجعة الثانية",
+  "Final Review": "المراجعة النهائية",
+  "Initial screening": "الفحص الأولي",
+  "Project Submission": "تقديم المشروع",
+  "Initial Screening": "الفحص الأولي",
+  "Returned to PM": "أعيد إلى مدير المشروع",
+  "Technical review": "المراجعة الفنية",
+  "Technical Review": "المراجعة الفنية",
+  "Comment Consolidation": "توحيد التعليقات",
+  "PM response": "رد مدير المشروع",
+  "PM Response": "رد مدير المشروع",
+  Response: "الرد",
+  "Final recommendation": "التوصية النهائية",
+  "Final Recommendation": "التوصية النهائية",
+  "Executive approval": "اعتماد المدير التنفيذي",
+  "ED Approval": "اعتماد المدير التنفيذي",
+  "Closure & Archive": "الإغلاق والأرشفة",
+  Released: "تم الإصدار",
+  signed: "موقع",
+  pending: "معلق",
+  blocked: "محظور",
+  awaiting: "بانتظار",
+  resolved: "محلول",
+  open: "مفتوح",
+  approvedWithComments: "معتمد مع تعليقات",
+  pass: "ناجح",
+  warning: "تحذير",
+  fail: "فشل",
+  "Project submission": "تقديم المشروع",
+  "Collect comments": "جمع التعليقات",
+  "ED approval": "اعتماد المدير التنفيذي",
+  "Review updated submission": "مراجعة الطلب المحدث",
+  "TTRT lead": "قائد TTRT",
+  "TTRT member": "عضو TTRT",
+  Coordinator: "منسق",
+  "Technical reviewer": "مراجع فني",
+  "Executive approver": "معتمد تنفيذي",
+  "Read-only viewer": "مستخدم قراءة فقط",
+  "Platform admin": "مسؤول المنصة",
+  "AI/V2X reviewer": "مراجع AI/V2X",
+  "Traffic systems": "أنظمة المرور",
+  "Enterprise architecture": "البنية المؤسسية",
+  "Signal systems": "أنظمة الإشارات",
+  "Network services": "خدمات الشبكة",
+  "Road safety": "السلامة المرورية",
+  "Executive Director": "المدير التنفيذي",
+  Aviation: "الطيران",
+  ITS: "أنظمة النقل الذكية",
+  "Road Safety": "السلامة المرورية",
+  "AI/V2X": "AI/V2X",
+  "ITS Deployment": "نشر أنظمة النقل الذكية",
+  "All submissions": "كل الطلبات",
+  "Aviation submissions": "طلبات الطيران",
+  "checks passed": "فحوصات ناجحة",
+  "gaps or warnings": "فجوات أو تحذيرات",
+  Configuration: "الإعداد",
+  "Assigned division": "الإدارة المسندة",
+  "Final review": "المراجعة النهائية",
+  "Screening and circulation": "الفحص والتعميم",
+  "Procurement and finance": "المشتريات والمالية",
+  "Executive Director approval": "اعتماد المدير التنفيذي",
+  "TTRT reviewer": "مراجع TTRT",
+  "PM": "مدير المشروع",
+  "TTRT coordinator": "منسق TTRT",
+  "TTRT members": "أعضاء TTRT",
+  today: "اليوم",
+  "same day": "نفس اليوم",
+  done: "منجز",
+  current: "حالي",
+  next: "التالي",
+  closed: "مغلق",
+  "awaiting PM": "بانتظار مدير المشروع",
+  "N/A": "غير متاح",
+  None: "لا يوجد",
+};
+
+const arReplacements: Array<[RegExp, string | ((...args: string[]) => string)]> = [
+  [/^Required for (.+)$/u, (_match, type) => `مطلوب لـ ${translateTtrtCore(type)}`],
+  [/^AI recommendation for (.+)$/u, (_match, lens) => `توصية الذكاء الاصطناعي لـ ${translateTtrtCore(lens)}`],
+  [/^(.+) review required$/u, (_match, lens) => `مراجعة ${translateTtrtCore(lens)} مطلوبة`],
+  [
+    /^Review this package from the (.+) perspective\. The AI found (\d+) evidence gap, (\d+) pending signatures, and no uploaded files yet\.$/u,
+    (_match, lens, gaps, signatures) =>
+      `راجع هذه الحزمة من منظور ${translateTtrtCore(lens)}. وجد الذكاء الاصطناعي ${gaps} فجوات أدلة و${signatures} توقيعات معلقة ولا توجد ملفات مرفوعة حتى الآن.`,
+  ],
+  [
+    /^Review this package from the (.+) perspective\. The AI found (\d+) evidence gaps, (\d+) pending signatures, and no uploaded files yet\.$/u,
+    (_match, lens, gaps, signatures) =>
+      `راجع هذه الحزمة من منظور ${translateTtrtCore(lens)}. وجد الذكاء الاصطناعي ${gaps} فجوات أدلة و${signatures} توقيعات معلقة ولا توجد ملفات مرفوعة حتى الآن.`,
+  ],
+  [/^(\d+) unread$/u, (_match, count) => `${count} غير مقروءة`],
+  [/^(\d+) submission$/u, (_match, count) => (count === "1" ? "طلب واحد" : `${count} طلب`)],
+  [/^(\d+) submissions$/u, (_match, count) => (count === "1" ? "طلب واحد" : `${count} طلبات`)],
+  [/^(\d+) total packages$/u, (_match, count) => `${count} حزم إجمالية`],
+  [/^(\d+) packages visible in the queue$/u, (_match, count) => `${count} حزم ظاهرة في القائمة`],
+  [/^(\d+) overdue, (\d+) evidence gaps$/u, (_match, overdue, gaps) => `${overdue} متأخرة، ${gaps} فجوات أدلة`],
+  [/^(\d+)\/(\d+) checks passed$/u, (_match, pass, total) => `${pass}/${total} فحوصات ناجحة`],
+  [/^(\d+) checks passed$/u, (_match, count) => `${count} فحوصات ناجحة`],
+  [/^(\d+) gaps or warnings$/u, (_match, count) => (count === "1" ? "فجوة أو تحذير واحد" : `${count} فجوات أو تحذيرات`)],
+  [/^(\d+) pending$/u, (_match, count) => `${count} معلقة`],
+  [/^(\d+) signed$/u, (_match, count) => `${count} موقعة`],
+  [/^(\d+) needs attention$/u, (_match, count) => `${count} يحتاج إلى انتباه`],
+  [/^(\d+) comments$/u, (_match, count) => `${count} تعليقات`],
+  [/^(\d+) files$/u, (_match, count) => `${count} ملفات`],
+  [/^(\d+)% complete$/u, (_match, percent) => `${percent}% مكتمل`],
+  [/^(\d+) this month$/u, (_match, count) => `${count} هذا الشهر`],
+  [/^(\d+)d average target window$/u, (_match, days) => `${days} أيام متوسط نافذة الهدف`],
+  [/^Due (.+)$/u, (_match, due) => `مستحق ${due}`],
+  [/^Write (.+) comment\.\.\.$/u, (_match, lens) => `اكتب تعليق ${translateTtrtCore(lens)}...`],
+  [/^Recipients: (.+)$/u, (_match, recipients) => `المستلمون: ${recipients}`],
+];
+
+function translateTtrtCore(value: string): string {
+  const compact = value.replace(/\s+/g, " ").trim();
+  if (!compact) return value;
+  if (ar[compact]) return ar[compact];
+  for (const [pattern, replacement] of arReplacements) {
+    const match = compact.match(pattern);
+    if (match) {
+      return typeof replacement === "function"
+        ? replacement(...match)
+        : compact.replace(pattern, replacement);
+    }
+  }
+  let translated = compact;
+  Object.entries(ar)
+    .sort((a, b) => b[0].length - a[0].length)
+    .forEach(([english, arabic]) => {
+      const source = escapeRegExp(english);
+      const pattern = english.length <= 3 && /^[A-Za-z]+$/u.test(english)
+        ? new RegExp(`\\b${source}\\b`, "g")
+        : new RegExp(source, "g");
+      translated = translated.replace(pattern, arabic);
+    });
+  return translated;
+}
+
+function translateTtrtText(value: string, lang: TtrtLanguage): string {
+  if (lang === "en") return value;
+  const leading = value.match(/^\s*/u)?.[0] ?? "";
+  const trailing = value.match(/\s*$/u)?.[0] ?? "";
+  const body = value.trim();
+  if (!body) return value;
+  return `${leading}${translateTtrtCore(body)}${trailing}`;
+}
+
+function applyTtrtLanguage(lang: TtrtLanguage) {
+  const root = document.getElementById("root");
+  if (!root) return;
+  const walker = document.createTreeWalker(root, window.NodeFilter.SHOW_TEXT, {
+    acceptNode(node) {
+      const parent = node.parentElement;
+      if (!parent || !node.nodeValue?.trim()) return window.NodeFilter.FILTER_REJECT;
+      if (parent.closest("[data-i18n-skip]")) return window.NodeFilter.FILTER_REJECT;
+      if (["SCRIPT", "STYLE", "TEXTAREA", "INPUT"].includes(parent.tagName)) return window.NodeFilter.FILTER_REJECT;
+      return window.NodeFilter.FILTER_ACCEPT;
+    },
+  });
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+  textNodes.forEach((node) => {
+    const original = ttrtOriginalText.get(node) ?? node.nodeValue ?? "";
+    if (!ttrtOriginalText.has(node)) ttrtOriginalText.set(node, original);
+    const next = translateTtrtText(original, lang);
+    if (node.nodeValue !== next) node.nodeValue = next;
+  });
+
+  root.querySelectorAll<HTMLElement>(i18nAttributes.map((attr) => `[${attr}]`).join(",")).forEach((element) => {
+    i18nAttributes.forEach((attr) => {
+      const value = element.getAttribute(attr);
+      if (!value) return;
+      const originalAttr = `data-i18n-original-${attr}`;
+      const original = element.getAttribute(originalAttr) ?? value;
+      if (!element.hasAttribute(originalAttr)) element.setAttribute(originalAttr, original);
+      element.setAttribute(attr, translateTtrtText(original, lang));
+    });
+  });
+}
+
+function escapeRegExp(value: string) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
 
 const projectTypes: ProjectType[] = ["New Tender", "Tender Renewal", "Variation", "Direct Awarding", "Other"];
 const priorityOptions: Submission["priority"][] = ["Normal", "High", "Critical"];
@@ -587,7 +989,7 @@ export default function App() {
   );
   const [selectedId, setSelectedId] = useState(() => submissionRecords[0]?.id ?? "");
   const [query, setQuery] = useState("");
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(!isEmbedded);
   const [foldedGroups, setFoldedGroups] = useState<Record<string, boolean>>({});
   const [rules, setRules] = useState<Rule[]>(() => loadStored(storageKeys.rules, initialRules));
   const [projectFiles, setProjectFiles] = useState<ProjectFile[]>(() => loadStored(storageKeys.files, []));
@@ -599,6 +1001,7 @@ export default function App() {
   const [submitOpen, setSubmitOpen] = useState(false);
   const [askOpen, setAskOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
+  const [lang, setLang] = useState<TtrtLanguage>(() => (window.localStorage.getItem(storageKeys.language) === "ar" ? "ar" : "en"));
 
   useEffect(() => saveStored(storageKeys.submissions, submissionRecords), [submissionRecords]);
   useEffect(() => saveStored(storageKeys.files, projectFiles), [projectFiles]);
@@ -606,6 +1009,31 @@ export default function App() {
   useEffect(() => saveStored(storageKeys.currentUser, currentUserId), [currentUserId]);
   useEffect(() => saveStored(storageKeys.notifications, notifications), [notifications]);
   useEffect(() => saveStored(storageKeys.rules, rules), [rules]);
+  useEffect(() => {
+    window.localStorage.setItem(storageKeys.language, lang);
+    document.documentElement.lang = lang === "ar" ? "ar" : "en";
+    document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+    document.body.classList.toggle("ttrt-rtl", lang === "ar");
+    document.body.classList.toggle("ttrt-ltr", lang === "en");
+
+    applyTtrtLanguage(lang);
+    let frame = window.requestAnimationFrame(() => applyTtrtLanguage(lang));
+    const root = document.getElementById("root");
+    const observer = new MutationObserver(() => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => applyTtrtLanguage(lang));
+    });
+    if (root) observer.observe(root, { attributes: true, childList: true, subtree: true, characterData: true });
+
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+    };
+  }, [askOpen, currentUserId, lang, notificationOpen, page, selectedId, signedIn, submitOpen]);
+  useEffect(() => {
+    if (isEmbedded) setSidebarOpen(false);
+  }, [isEmbedded]);
+
   useEffect(() => {
     function handleShortcut(event: KeyboardEvent) {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
@@ -999,11 +1427,11 @@ export default function App() {
     pushNotification(submission.id, `${kind} generated`, `${kind} was generated for ${submission.code}.`);
   }
 
-  if (!signedIn) return <Login onSubmit={() => setSignedIn(true)} />;
+  if (!signedIn) return <Login lang={lang} onLanguageChange={setLang} onSubmit={() => setSignedIn(true)} />;
 
   return (
-    <div className="app-shell">
-      <aside className={`sidebar ${sidebarOpen ? "" : "collapsed"}`}>
+    <div className={`${isEmbedded ? `app-shell embedded-shell ${sidebarOpen ? "sidebar-open" : "sidebar-closed"}` : "app-shell"} ${lang === "ar" ? "ttrt-rtl-shell" : "ttrt-ltr-shell"}`}>
+      {(!isEmbedded || sidebarOpen) && <aside className={`sidebar ${sidebarOpen ? "" : "collapsed"}`}>
         <div className="brand">
           <button className="brand-home" type="button" onClick={() => setPage("dashboard")} aria-label="Open overview">
             <img src={admLogo} alt="Abu Dhabi Mobility" className="brand-logo" />
@@ -1056,13 +1484,26 @@ export default function App() {
             <img src={origenLogo} alt="Origen" />
           </div>
         </div>
-      </aside>
+      </aside>}
 
-      <div className={`main ${sidebarOpen ? "" : "expanded"}`}>
+      <div
+        className={`main ${sidebarOpen ? "" : "expanded"}`}
+        style={isEmbedded ? {
+          width: sidebarOpen ? "calc(100% - 240px)" : "100%",
+          marginLeft: 0,
+          transform: sidebarOpen ? (lang === "ar" ? "translateX(-240px)" : "translateX(240px)") : "none",
+        } : undefined}
+      >
         <header className="topbar">
-          {!sidebarOpen && (
-            <button className="icon-button" type="button" aria-label="Expand sidebar" onClick={() => setSidebarOpen(true)}>
-              <PanelLeftOpen size={18} />
+          {(isEmbedded || !sidebarOpen) && (
+            <button
+              className="app-context-button"
+              type="button"
+              aria-label={sidebarOpen ? "Hide TTRT navigation" : "Open TTRT navigation"}
+              onClick={() => setSidebarOpen((current) => !current)}
+            >
+              {sidebarOpen ? <PanelLeftClose size={17} /> : <PanelLeftOpen size={17} />}
+              <strong>TTRT</strong>
             </button>
           )}
           <div className="breadcrumb">
@@ -1079,6 +1520,22 @@ export default function App() {
             />
           </label>
           <div className="top-actions">
+            {isEmbedded && (
+              <a className="mobility-return-button" href={getMobilityAiReturnUrl()} target="_top">
+                <LayoutDashboard size={15} />
+                <span>Mobility AI</span>
+              </a>
+            )}
+            <button
+              className="language-toggle"
+              type="button"
+              title={lang === "ar" ? "Switch to English" : "Switch to Arabic"}
+              aria-label={lang === "ar" ? "Switch to English" : "Switch to Arabic"}
+              onClick={() => setLang((current) => (current === "ar" ? "en" : "ar"))}
+            >
+              <Languages size={16} />
+              <span data-i18n-skip>{lang === "ar" ? "EN" : "عربي"}</span>
+            </button>
             <span className="clock">18:42 / Asia Dubai</span>
             <label className="role-switcher" aria-label="View TTRT as">
               <UsersRound size={15} />
@@ -1405,7 +1862,15 @@ function NotificationPopover({
   );
 }
 
-function Login({ onSubmit }: { onSubmit: () => void }) {
+function Login({
+  lang,
+  onLanguageChange,
+  onSubmit,
+}: {
+  lang: TtrtLanguage;
+  onLanguageChange: (language: TtrtLanguage) => void;
+  onSubmit: () => void;
+}) {
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     onSubmit();
@@ -1414,6 +1879,18 @@ function Login({ onSubmit }: { onSubmit: () => void }) {
   return (
     <div className="login-page">
       <form className="login-card" onSubmit={handleSubmit}>
+        <div className="login-toolbar">
+          <button
+            className="language-toggle"
+            type="button"
+            title={lang === "ar" ? "Switch to English" : "Switch to Arabic"}
+            aria-label={lang === "ar" ? "Switch to English" : "Switch to Arabic"}
+            onClick={() => onLanguageChange(lang === "ar" ? "en" : "ar")}
+          >
+            <Languages size={16} />
+            <span data-i18n-skip>{lang === "ar" ? "EN" : "عربي"}</span>
+          </button>
+        </div>
         <div className="login-brand">
           <img src={admLogo} alt="Abu Dhabi Mobility" />
           <div>
@@ -1462,19 +1939,18 @@ function Dashboard({
     .sort((left, right) => actionPriority(left) - actionPriority(right));
   const watchedItems = activeSubmissions
     .filter((item) => !isActionRequiredForUser(item, currentUser))
-    .slice(0, Math.max(0, 5 - myActionItems.length));
+    .slice(0, Math.max(0, 7 - myActionItems.length));
   const actionItems = [...myActionItems, ...watchedItems].slice(0, 7);
   const waitingSignatures = visibleSubmissions.reduce((total, item) => total + signatureCounts(item).pending, 0);
   const missingEvidence = visibleSubmissions.reduce((total, item) => total + requirementCounts(item).fail + requirementCounts(item).warning, 0);
-  const releasedSubmissions = visibleSubmissions.filter((item) => item.stage === "Released");
   const overdueSubmissions = activeSubmissions.filter((item) => {
     const due = parseDisplayDate(item.dueOn);
     return due ? due.getTime() < Date.now() : false;
   });
+  const releasedSubmissions = visibleSubmissions.filter((item) => item.stage === "Released");
   const completion = visibleSubmissions.length
     ? Math.round((releasedSubmissions.length / visibleSubmissions.length) * 100)
     : 0;
-  const submittedThisMonth = visibleSubmissions.filter((item) => item.submittedOn.includes("May") || item.submittedOn.includes("Jun")).length;
   const riskCount = overdueSubmissions.length + missingEvidence;
   const decisionSplit = [
     { label: "Approved", count: visibleSubmissions.filter((item) => item.decision === "Approve").length, color: "#64b77d" },
@@ -1506,10 +1982,10 @@ function Dashboard({
             <Pill label={`${completion}% complete`} tone={completion >= 70 ? "green" : completion >= 40 ? "amber" : "blue"} />
           </div>
           <div className="metric-grid overview-metric-grid">
-            <MetricCard icon={Inbox} label="Total submissions" value={String(visibleSubmissions.length)} helper="All project packages" tone="blue" progress={100} />
-            <MetricCard icon={CheckCircle2} label="Released" value={String(releasedSubmissions.length)} helper="Closed and archived" tone="green" progress={completion} />
-            <MetricCard icon={Clock3} label="Submitted this month" value={String(submittedThisMonth)} helper={`${activeSubmissions.length} active in review`} tone="amber" progress={Math.min(100, submittedThisMonth * 16)} />
+            <MetricCard icon={Inbox} label="Active submissions" value={String(activeSubmissions.length)} helper={`${visibleSubmissions.length} total packages`} tone="blue" progress={Math.max(8, Math.min(100, activeSubmissions.length * 18))} />
+            <MetricCard icon={UserPlus} label="My action queue" value={String(myActionItems.length)} helper={`${actionItems.length} packages visible in the queue`} tone={myActionItems.length > 0 ? "amber" : "green"} progress={Math.max(8, Math.min(100, myActionItems.length * 24))} />
             <MetricCard icon={AlertTriangle} label="Due / evidence risk" value={String(riskCount)} helper={`${overdueSubmissions.length} overdue, ${missingEvidence} evidence gaps`} tone={riskCount > 0 ? "red" : "green"} progress={Math.max(4, Math.min(100, riskCount * 16))} />
+            <MetricCard icon={Signature} label="Pending signatures" value={String(waitingSignatures)} helper="ED / TTRT signatures before release" tone={waitingSignatures > 0 ? "amber" : "green"} progress={Math.max(8, Math.min(100, waitingSignatures * 18))} />
           </div>
         </div>
 
@@ -1560,16 +2036,6 @@ function Dashboard({
         </section>
       </div>
 
-      <section className="flow-card process-card">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">Flow accelerator</p>
-            <h2>Simplified process map</h2>
-          </div>
-          <Pill label={`${waitingSignatures} signatures pending`} tone={waitingSignatures > 0 ? "amber" : "green"} />
-        </div>
-        <TtrtProcessMap />
-      </section>
     </div>
   );
 }
@@ -1681,7 +2147,7 @@ function SubmissionsPage({
           <div className="section-heading">
             <div>
               <p className="eyebrow">Queue</p>
-              <h2>{queue.length} submissions</h2>
+              <h2>{queue.length === 1 ? "1 submission" : `${queue.length} submissions`}</h2>
             </div>
           </div>
           <div className="submission-list">
@@ -2461,33 +2927,6 @@ function UsersPage({ users, addUser, patchUser }: { users: TtrtUser[]; addUser: 
   );
 }
 
-const processPhases = [
-  {
-    number: "01",
-    title: "Intake and screening",
-    subtitle: "Quality gate before circulation",
-    tone: "blue" as StageTone,
-    steps: stageFlow.slice(0, 2),
-    outcome: "Incomplete packages return to the project manager before TTRT time is consumed.",
-  },
-  {
-    number: "02",
-    title: "Technical review loop",
-    subtitle: "Comments resolved once, not by email drift",
-    tone: "amber" as StageTone,
-    steps: stageFlow.slice(2, 5),
-    outcome: "AI consolidates comments, tracks PM responses, and flags unresolved requirements.",
-  },
-  {
-    number: "03",
-    title: "Decision and release",
-    subtitle: "Recommendation, signatures, archive",
-    tone: "green" as StageTone,
-    steps: stageFlow.slice(5),
-    outcome: "The final report, conditions, approvals, and evidence trail are locked for audit.",
-  },
-];
-
 function ProjectStepTimeline({ selected, compact = false }: { selected: Submission; compact?: boolean }) {
   const currentIndex = getCurrentStageIndex(selected);
 
@@ -2505,58 +2944,6 @@ function ProjectStepTimeline({ selected, compact = false }: { selected: Submissi
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function TtrtProcessMap() {
-  return (
-    <div className="process-map">
-      {processPhases.map((phase, phaseIndex) => (
-        <article className={`process-phase ${phase.tone}`} key={phase.title}>
-          <div className="phase-header">
-            <span>{phase.number}</span>
-            <div>
-              <p>{phase.subtitle}</p>
-              <h3>{phase.title}</h3>
-            </div>
-          </div>
-          <div className="process-steps">
-            {phase.steps.map((step, stepIndex) => {
-              const globalIndex = processPhases.slice(0, phaseIndex).reduce((total, item) => total + item.steps.length, 0) + stepIndex + 1;
-              return (
-                <div className="process-step" key={step.label}>
-                  <span className={`step-index ${step.tone}`}>{globalIndex}</span>
-                  <div>
-                    <strong>{step.label}</strong>
-                    <p>{step.helper}</p>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-          <div className="phase-outcome">
-            <CheckCircle2 size={15} />
-            <span>{phase.outcome}</span>
-          </div>
-          {phaseIndex < processPhases.length - 1 && (
-            <div className="phase-connector" aria-hidden="true">
-              <ArrowRight size={16} />
-            </div>
-          )}
-        </article>
-      ))}
-      <div className="decision-strip">
-        <div>
-          <p className="eyebrow">Final recommendation paths</p>
-          <strong>Approve, conditional approval, or reject</strong>
-        </div>
-        <div className="decision-paths">
-          <Pill label="Approve" tone="green" />
-          <Pill label="Conditional approval" tone="amber" />
-          <Pill label="Reject" tone="red" />
-        </div>
-      </div>
     </div>
   );
 }
@@ -3218,4 +3605,24 @@ function initials(name: string): string {
     .slice(0, 2)
     .map((part) => part[0]?.toUpperCase())
     .join("");
+}
+
+function getMobilityAiReturnUrl() {
+  const explicit = new URLSearchParams(window.location.search).get("returnTo");
+  if (explicit) return explicit;
+
+  try {
+    if (document.referrer) {
+      const referrer = new URL(document.referrer);
+      if (referrer.origin !== window.location.origin) return `${referrer.origin}/overview`;
+    }
+  } catch {
+    // Ignore malformed referrers and use the local-development fallback below.
+  }
+
+  if (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1") {
+    return `${window.location.protocol}//${window.location.hostname}:8280/overview`;
+  }
+
+  return "/overview";
 }

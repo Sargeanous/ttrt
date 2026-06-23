@@ -1,27 +1,41 @@
 :root {
-  font-family: Aptos, "Segoe UI", Arial, sans-serif;
-  color: #101828;
-  background: #f5f8f7;
+  font-family: Inter, Aptos, "Segoe UI", Arial, sans-serif;
+  color: #16201b;
+  background: #f6f8f7;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
-  --green: #1f8a55;
-  --green-dark: #0f4329;
-  --green-soft: #e8f6ee;
-  --teal: #315f6c;
-  --ink: #101828;
-  --muted: #667085;
-  --line: #dfe6e3;
+  --green: #1b7e4d;
+  --green-dark: #0d3a26;
+  --green-soft: #eff8f2;
+  --teal: #0d9488;
+  --ink: #16201b;
+  --muted: #5a6661;
+  --muted-2: #8a9590;
+  --line: #e2e8e5;
   --panel: #ffffff;
-  --soft: #f1f6f4;
-  --red: #c33b32;
-  --red-soft: #fdecea;
-  --amber: #c47a17;
-  --amber-soft: #fff5df;
-  --blue: #2869a6;
-  --blue-soft: #eaf3fb;
+  --soft: #eef2f0;
+  --page: #f6f8f7;
+  --red: #c2342c;
+  --red-soft: #fceeed;
+  --amber: #b45309;
+  --amber-soft: #fef5e7;
+  --blue: #0e7490;
+  --blue-soft: #e8f6f9;
   --purple: #6952b8;
   --purple-soft: #f1edff;
-  --shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 14px 32px -28px rgba(15, 67, 41, 0.35);
+  --ai: #0d9488;
+  --ai-soft: #e6f4f2;
+  --green-50: #eff8f2;
+  --green-100: #dcf0e4;
+  --green-200: #b5e0c9;
+  --green-300: #83c9a4;
+  --green-400: #4dac7c;
+  --green-500: #2e955f;
+  --green-600: #1b7e4d;
+  --green-700: #166540;
+  --green-800: #124e33;
+  --green-900: #0d3a26;
+  --shadow: none;
 }
 
 * {
@@ -590,10 +604,17 @@ b {
 }
 
 .overview-metric-grid .metric-card {
+  min-width: 0;
   min-height: 136px;
   box-shadow: none;
   border-color: #dde7e2;
   background: #fff;
+  overflow: hidden;
+}
+
+.overview-metric-grid .metric-card span,
+.overview-metric-grid .metric-card p {
+  overflow-wrap: anywhere;
 }
 
 .ttrt-progress-main {
@@ -2198,6 +2219,11 @@ b {
   gap: 14px;
 }
 
+.login-toolbar {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .login-brand {
   display: flex;
   align-items: center;
@@ -2685,4 +2711,1477 @@ b {
     justify-content: flex-start;
     justify-items: start;
   }
+}
+
+/* ITC Mobility-AI design direction v0.1 for TTRT. */
+:root {
+  --green-50: #eff8f2;
+  --green-100: #dcf0e4;
+  --green-200: #b5e0c9;
+  --green-300: #83c9a4;
+  --green-400: #4dac7c;
+  --green-500: #2e955f;
+  --green-600: #1b7e4d;
+  --green-700: #166540;
+  --green-800: #124e33;
+  --green-900: #0d3a26;
+  --page: #f6f8f7;
+  --panel: #ffffff;
+  --soft: #eef2f0;
+  --line: #e2e8e5;
+  --ink: #16201b;
+  --muted: #5a6661;
+  --muted-2: #8a9590;
+  --amber: #c56c00;
+  --red: #d14343;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Inter, Aptos, "Segoe UI", sans-serif;
+}
+
+body,
+.app-shell,
+.main {
+  background: var(--page);
+  color: var(--ink);
+}
+
+.sidebar {
+  width: 244px;
+  background: #ffffff;
+  border-right: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.nav-item {
+  min-height: 36px;
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.nav-item.active {
+  background: var(--green-50);
+  box-shadow: inset 4px 0 0 var(--green-500);
+  color: var(--green-700);
+  font-weight: 650;
+}
+
+.page-title h1,
+.page-header h1 {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 650;
+  letter-spacing: 0;
+  line-height: 1.15;
+}
+
+.page-title p,
+.page-header p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.panel,
+.metric-card,
+.flow-card,
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.queue-panel,
+.detail-panel,
+.executive-decision-brief,
+.document-panel,
+.compact-document-panel,
+.required-docs-panel,
+.role-brief-panel {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.metric-card {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+.metric-card {
+  min-height: 112px;
+  padding: 16px;
+}
+
+.metric-card strong {
+  color: var(--ink);
+  font-size: 28px;
+  font-weight: 650;
+  line-height: 1;
+}
+
+.metric-card span,
+.panel > .eyebrow:first-child,
+.section-heading span {
+  color: var(--muted-2);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+}
+
+.metric-icon {
+  background: var(--soft);
+  color: var(--green-700);
+}
+
+.workspace-grid,
+.workspace-grid.narrow-left,
+.overview-action-grid {
+  gap: 24px;
+}
+
+.submission-card.active {
+  background: var(--green-50);
+  border-color: var(--green-400);
+  box-shadow: inset 4px 0 0 var(--green-500);
+}
+
+.submission-card {
+  min-height: 72px;
+}
+
+.project-stepper {
+  padding-block: 8px 16px;
+}
+
+.project-step span {
+  background: #ffffff;
+  border-color: var(--line);
+  color: var(--muted-2);
+  box-shadow: none;
+}
+
+.project-step.done span {
+  background: var(--green-50);
+  border-color: var(--green-200);
+  color: var(--green-700);
+}
+
+.project-step.current span {
+  background: var(--green-500);
+  border-color: var(--green-500);
+  color: #ffffff;
+}
+
+.project-step.current strong {
+  color: var(--green-800);
+}
+
+.executive-decision-brief {
+  border-color: #20a68a;
+  overflow: hidden;
+}
+
+.executive-decision-brief .eyebrow:first-child::after {
+  content: "Generated by AI";
+  display: inline-flex;
+  margin-left: 10px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #d8f3e6;
+  color: #16865a;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+/* ITC Mobility-AI design direction: final visible shell pass, 2026-06-18. */
+body,
+.app-shell,
+.main,
+.content {
+  background: #f6f8f7 !important;
+  color: #16201b !important;
+  font-family: Inter, Aptos, "Segoe UI", sans-serif !important;
+}
+
+.sidebar {
+  width: 244px !important;
+  background: #ffffff !important;
+  border-right: 1px solid #e2e8e5 !important;
+  box-shadow: none !important;
+  padding: 16px 14px !important;
+}
+
+.brand {
+  background: #f6f8f7 !important;
+  border: 1px solid #e2e8e5 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  padding: 12px !important;
+}
+
+.sidebar-search,
+.global-search,
+.ask-button,
+.search-pill {
+  background: #ffffff !important;
+  border: 1px solid #e2e8e5 !important;
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  color: #5a6661 !important;
+}
+
+.nav-group {
+  margin-top: 20px !important;
+}
+
+.nav-group-toggle,
+.nav-group-label {
+  color: #8a9590 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  padding: 0 4px 8px !important;
+  text-transform: uppercase !important;
+}
+
+.nav-group-items {
+  gap: 6px !important;
+}
+
+.nav-item {
+  min-height: 40px !important;
+  border-radius: 8px !important;
+  padding: 0 12px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: #5a6661 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+}
+
+.nav-item svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: #8a9590 !important;
+}
+
+.nav-item.active {
+  background: #1b7e4d !important;
+  box-shadow: none !important;
+  color: #ffffff !important;
+  font-weight: 650 !important;
+}
+
+.nav-item.active svg {
+  color: #ffffff !important;
+}
+
+.topbar {
+  min-height: 64px !important;
+  background: #ffffff !important;
+  border-bottom: 1px solid #e2e8e5 !important;
+  box-shadow: none !important;
+}
+
+.content,
+.main {
+  padding: 24px !important;
+}
+
+.page-title h1,
+.page-header h1 {
+  color: #16201b !important;
+  font-size: 28px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.15 !important;
+}
+
+.page-title p,
+.page-header p {
+  color: #5a6661 !important;
+  font-size: 14px !important;
+  line-height: 1.55 !important;
+}
+
+.eyebrow,
+.panel-eyebrow,
+.metric-card span,
+.section-heading span {
+  color: #8a9590 !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+}
+
+.panel,
+.metric-card,
+.flow-card,
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.queue-panel,
+.detail-panel,
+.executive-decision-brief,
+.document-panel,
+.compact-document-panel,
+.required-docs-panel,
+.role-brief-panel,
+.submission-detail-card,
+.comments-panel,
+.signature-panel {
+  background: #ffffff !important;
+  border: 1px solid #e2e8e5 !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.metric-card {
+  background: #ffffff !important;
+  background-image: none !important;
+}
+
+.metric-card {
+  min-height: 112px !important;
+  padding: 16px !important;
+}
+
+.metric-card strong {
+  color: #16201b !important;
+  font-size: 28px !important;
+  font-weight: 650 !important;
+  line-height: 1 !important;
+}
+
+.metric-icon {
+  background: transparent !important;
+  color: #1b7e4d !important;
+  box-shadow: none !important;
+}
+
+.workspace-grid,
+.workspace-grid.narrow-left,
+.overview-action-grid {
+  gap: 24px !important;
+}
+
+.submission-card {
+  min-height: 72px !important;
+  background: #ffffff !important;
+  border: 1px solid #e2e8e5 !important;
+  box-shadow: none !important;
+}
+
+.submission-card.active {
+  background: #ffffff !important;
+  border-color: #1b7e4d !important;
+  box-shadow: inset 4px 0 0 #1b7e4d !important;
+}
+
+.project-stepper {
+  padding-block: 8px 16px !important;
+}
+
+.project-step span {
+  background: #ffffff !important;
+  border-color: #e2e8e5 !important;
+  color: #8a9590 !important;
+  box-shadow: none !important;
+}
+
+.project-step.done span {
+  background: #eff8f2 !important;
+  border-color: #b5e0c9 !important;
+  color: #166540 !important;
+}
+
+.project-step.current span {
+  background: #1b7e4d !important;
+  border-color: #1b7e4d !important;
+  color: #ffffff !important;
+}
+
+.project-step.current strong {
+  color: #166540 !important;
+}
+
+.executive-decision-brief {
+  border-color: #13a085 !important;
+  overflow: hidden !important;
+}
+
+.executive-decision-brief .eyebrow:first-child::after {
+  margin-left: 8px !important;
+  padding: 3px 8px !important;
+  border-radius: 999px !important;
+  background: #dcf0e4 !important;
+  color: #1b7e4d !important;
+  font-size: 11px !important;
+  letter-spacing: 0 !important;
+  white-space: nowrap !important;
+}
+
+.ai-picked-button,
+.primary-action,
+.primary-button {
+  background: #1b7e4d !important;
+  border-color: #1b7e4d !important;
+  color: #ffffff !important;
+}
+
+.ai-pick-badge {
+  white-space: nowrap !important;
+  font-size: 11px !important;
+}
+/* Figma live lock v2 - TTRT visible redesign, 2026-06-18 */
+:root {
+  --itc-page: #f6f8f7;
+  --itc-surface: #ffffff;
+  --itc-muted: #eef2f0;
+  --itc-line: #e2e8e5;
+  --itc-text: #16201b;
+  --itc-secondary: #5a6661;
+  --itc-tertiary: #8a9590;
+  --itc-green: #1b7e4d;
+  --itc-green-soft: #eff8f2;
+  --itc-green-border: #b5e0c9;
+  --itc-ai: #13a085;
+}
+
+html,
+body,
+#root {
+  background: var(--itc-page) !important;
+  color: var(--itc-text) !important;
+  font-family: Inter, Aptos, "Segoe UI", system-ui, sans-serif !important;
+}
+
+.app-shell,
+.workspace,
+.main,
+.content,
+.page,
+.page-shell,
+main {
+  background: var(--itc-page) !important;
+  color: var(--itc-text) !important;
+}
+
+.sidebar {
+  width: 252px !important;
+  background: #fff !important;
+  border-right: 1px solid var(--itc-line) !important;
+  box-shadow: none !important;
+  padding: 20px 16px !important;
+}
+
+.brand {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.brand h1,
+.brand strong {
+  color: var(--itc-text) !important;
+  font-size: 20px !important;
+  font-weight: 700 !important;
+}
+
+.brand p,
+.brand small {
+  color: var(--itc-secondary) !important;
+  font-size: 12px !important;
+}
+
+.topbar,
+.app-header,
+.header {
+  min-height: 64px !important;
+  background: #fff !important;
+  border-bottom: 1px solid var(--itc-line) !important;
+  box-shadow: none !important;
+}
+
+.nav-group {
+  margin-top: 22px !important;
+}
+
+.nav-group-label,
+.nav-group-toggle,
+.eyebrow,
+.section-label,
+.panel-eyebrow {
+  color: var(--itc-tertiary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+  letter-spacing: .12em !important;
+  text-transform: uppercase !important;
+}
+
+.nav-item {
+  min-height: 40px !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  color: var(--itc-secondary) !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  gap: 10px !important;
+  padding: 0 12px !important;
+}
+
+.nav-item svg {
+  width: 16px !important;
+  height: 16px !important;
+  color: currentColor !important;
+}
+
+.nav-item:hover {
+  background: var(--itc-muted) !important;
+  color: var(--itc-text) !important;
+}
+
+.nav-item.active {
+  background: var(--itc-green) !important;
+  color: #fff !important;
+  font-weight: 650 !important;
+}
+
+.nav-item.active * {
+  color: #fff !important;
+}
+
+.panel,
+.card,
+.surface-card,
+.metric-card,
+.flow-card,
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.queue-panel,
+.detail-panel,
+.executive-decision-brief,
+.document-panel,
+.compact-document-panel,
+.required-docs-panel,
+.role-brief-panel,
+.submission-detail-card,
+.comments-panel,
+.signature-panel,
+.project-package-card,
+.reviewer-action-queue {
+  background: #fff !important;
+  background-image: none !important;
+  border: 1px solid var(--itc-line) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.panel,
+.card,
+.metric-card {
+  padding: 16px !important;
+}
+
+h1,
+.page-title h1,
+.page-header h1 {
+  color: var(--itc-text) !important;
+  font-size: 28px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+  line-height: 1.15 !important;
+}
+
+h2,
+.panel-title {
+  color: var(--itc-text) !important;
+  font-size: 22px !important;
+  font-weight: 650 !important;
+  line-height: 1.25 !important;
+}
+
+p,
+.page-title p,
+.page-header p,
+.helper-text {
+  color: var(--itc-secondary) !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+}
+
+.metric-card {
+  min-height: 112px !important;
+}
+
+.metric-card strong,
+.metric-value,
+.kpi-value {
+  color: var(--itc-text) !important;
+  font-size: 28px !important;
+  font-weight: 650 !important;
+  line-height: 1.05 !important;
+}
+
+.metric-icon,
+.kpi-icon,
+.stat-icon {
+  background: transparent !important;
+  color: var(--itc-green) !important;
+  box-shadow: none !important;
+}
+
+.status-pill,
+.chip,
+.badge {
+  border-radius: 999px !important;
+  box-shadow: none !important;
+  font-size: 12px !important;
+  font-weight: 650 !important;
+}
+
+.submission-card {
+  min-height: 72px !important;
+  background: #fff !important;
+  border: 1px solid var(--itc-line) !important;
+  box-shadow: none !important;
+}
+
+.submission-card.active {
+  background: #fff !important;
+  border-color: var(--itc-green) !important;
+  box-shadow: inset 4px 0 0 var(--itc-green) !important;
+}
+
+.project-stepper {
+  padding-block: 8px 16px !important;
+}
+
+.project-step span {
+  background: #fff !important;
+  border-color: var(--itc-line) !important;
+  color: var(--itc-tertiary) !important;
+  box-shadow: none !important;
+}
+
+.project-step.done span {
+  background: var(--itc-green-soft) !important;
+  border-color: var(--itc-green-border) !important;
+  color: #166540 !important;
+}
+
+.project-step.current span {
+  background: var(--itc-green) !important;
+  border-color: var(--itc-green) !important;
+  color: #fff !important;
+}
+
+.executive-decision-brief {
+  border-color: var(--itc-ai) !important;
+  overflow: hidden !important;
+}
+
+.ai-picked-button,
+.primary-action,
+.primary-button {
+  background: var(--itc-green) !important;
+  border-color: var(--itc-green) !important;
+  color: #fff !important;
+}
+
+.ai-pick-badge {
+  display: inline-flex !important;
+  white-space: nowrap !important;
+  font-size: 11px !important;
+  line-height: 1 !important;
+}
+
+.request-id,
+.application-id,
+.id,
+code,
+.mono {
+  font-family: "Roboto Mono", "SFMono-Regular", Consolas, monospace !important;
+  letter-spacing: 0 !important;
+}
+
+/* Figma: ITC Mobility AI - Sanad Redesign, applied as the shared app direction. */
+:root {
+  --itc-page: #f6f8f7;
+  --itc-surface: #ffffff;
+  --itc-muted: #eef2f0;
+  --itc-line: #e2e8e5;
+  --itc-text: #16201b;
+  --itc-secondary: #5a6661;
+  --itc-tertiary: #8a9590;
+  --itc-green: #1b7e4d;
+  --itc-green-dark: #0d3a26;
+  --itc-green-soft: #eff8f2;
+  --itc-green-border: #b5e0c9;
+  --itc-ai: #0d9488;
+  --itc-ai-soft: #e6f4f2;
+  --success-bg: #eff8f2;
+  --success-fg: #1b7e4d;
+  --info-bg: #e8f6f9;
+  --info-fg: #0e7490;
+  --warning-bg: #fef5e7;
+  --warning-fg: #b45309;
+  --danger-bg: #fceeed;
+  --danger-fg: #c2342c;
+  --neutral-bg: #eef2f0;
+  --neutral-fg: #5a6661;
+}
+
+body,
+.app-shell,
+.workspace,
+.main,
+.ttrt-page {
+  background: var(--itc-page) !important;
+  color: var(--itc-text) !important;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+  font-family: Inter, Aptos, "Segoe UI", system-ui, sans-serif !important;
+  letter-spacing: 0;
+}
+
+.sidebar {
+  width: 240px !important;
+  background: var(--itc-surface) !important;
+  border-right: 1px solid var(--itc-line) !important;
+  box-shadow: none !important;
+}
+
+.workspace {
+  margin-left: 240px !important;
+}
+
+.topbar {
+  min-height: 64px !important;
+  height: 64px !important;
+  background: var(--itc-surface) !important;
+  border-bottom: 1px solid var(--itc-line) !important;
+  box-shadow: none !important;
+  padding: 0 24px !important;
+}
+
+.main {
+  padding: 24px !important;
+}
+
+.nav-item {
+  min-height: 30px !important;
+  border-radius: 8px !important;
+  color: var(--itc-secondary) !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  box-shadow: none !important;
+}
+
+.nav-item.active {
+  background: var(--itc-green-soft) !important;
+  color: #166540 !important;
+  box-shadow: none !important;
+}
+
+.nav-item.active svg {
+  color: var(--itc-green) !important;
+}
+
+.brand,
+.topbar,
+.panel,
+.metric-card,
+.flow-card,
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.queue-panel,
+.detail-panel,
+.executive-decision-brief,
+.document-panel,
+.compact-document-panel,
+.required-docs-panel,
+.role-brief-panel,
+.submission-card,
+.draft-box,
+.review-comment-inline {
+  border-color: var(--itc-line) !important;
+  box-shadow: none !important;
+}
+
+.panel,
+.metric-card,
+.flow-card,
+.overview-kpi-panel,
+.current-status-panel,
+.process-card,
+.queue-panel,
+.detail-panel,
+.document-panel,
+.compact-document-panel,
+.required-docs-panel,
+.role-brief-panel,
+.submission-card,
+.draft-box,
+.review-comment-inline {
+  background: var(--itc-surface) !important;
+  border-radius: 12px !important;
+}
+
+.metric-card {
+  min-height: 93px !important;
+  padding: 16px !important;
+}
+
+.metric-card strong,
+.metric-card b {
+  color: var(--itc-text) !important;
+  font-size: 26px !important;
+  line-height: 1 !important;
+}
+
+.page-title h1,
+.page-header h1 {
+  color: var(--itc-text) !important;
+  font-size: 24px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0 !important;
+}
+
+.page-title p,
+.page-header p,
+.panel-header p {
+  color: var(--itc-secondary) !important;
+  font-size: 13px !important;
+}
+
+.status-pill,
+.pill {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  border-radius: 999px !important;
+  border: 0 !important;
+  padding: 4px 10px !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  line-height: 1.2 !important;
+  text-transform: none !important;
+}
+
+.pill.green,
+.status-pill.approved,
+.status-pill.complete,
+.status-pill.closed {
+  background: var(--success-bg) !important;
+  color: var(--success-fg) !important;
+}
+
+.pill.blue,
+.status-pill.new,
+.status-pill.in-review,
+.status-pill.in_review,
+.status-pill.technical-review {
+  background: var(--info-bg) !important;
+  color: var(--info-fg) !important;
+}
+
+.pill.amber,
+.status-pill.waiting,
+.status-pill.pending,
+.status-pill.conditional {
+  background: var(--warning-bg) !important;
+  color: var(--warning-fg) !important;
+}
+
+.pill.red,
+.status-pill.rejected,
+.status-pill.overdue,
+.status-pill.escalated {
+  background: var(--danger-bg) !important;
+  color: var(--danger-fg) !important;
+}
+
+.primary-button,
+.primary-action,
+.ai-picked-button {
+  background: var(--itc-green) !important;
+  border-color: var(--itc-green) !important;
+  border-radius: 8px !important;
+  color: #ffffff !important;
+  min-height: 32px !important;
+  box-shadow: none !important;
+}
+
+.secondary-button,
+.decision-button,
+.filter-chip,
+.queue-filter-pill {
+  border-color: var(--itc-line) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+}
+
+.filter-chip,
+.queue-filter-pill {
+  min-height: 36px !important;
+  border-radius: 999px !important;
+}
+
+.filter-chip.active,
+.queue-filter-pill.active {
+  background: var(--itc-green) !important;
+  border-color: var(--itc-green) !important;
+  color: #ffffff !important;
+}
+
+.executive-decision-brief,
+.ai-opinion,
+.ai-reco-header,
+[data-ai-panel="true"] {
+  background: var(--itc-surface) !important;
+  border-color: var(--itc-ai) !important;
+  box-shadow: none !important;
+}
+
+.executive-decision-brief {
+  border: 1px solid var(--itc-ai) !important;
+  border-radius: 12px !important;
+}
+
+.ai-reco-header {
+  border-bottom: 1px solid var(--itc-line) !important;
+}
+
+.executive-decision-brief .eyebrow:first-child::after {
+  background: var(--itc-ai-soft) !important;
+  color: var(--itc-ai) !important;
+}
+
+.workspace-grid,
+.workspace-grid.narrow-left,
+.overview-action-grid {
+  gap: 24px !important;
+}
+.submission-card.active {
+  background: var(--itc-green-soft) !important;
+  border-color: #83c9a4 !important;
+  box-shadow: none !important;
+}
+
+/* Clean sweep: keep operational review screens from overlapping at dense widths. */
+.topbar,
+.main,
+.workspace-grid,
+.workspace-grid.narrow-left,
+.ttrt-overview-dashboard,
+.detail-panel,
+.submission-card,
+.flow-rail,
+.queue-panel,
+.executive-decision-brief,
+.ai-opinion,
+.ai-reco-header {
+  min-width: 0 !important;
+}
+
+.topbar {
+  overflow: hidden !important;
+}
+
+.topbar > * {
+  min-width: 0 !important;
+}
+
+.main {
+  overflow-x: hidden !important;
+}
+
+.workspace-grid,
+.workspace-grid.narrow-left {
+  grid-template-columns: minmax(280px, 320px) minmax(0, 1fr) !important;
+  align-items: start !important;
+}
+
+.submission-card,
+.detail-panel,
+.executive-decision-brief,
+.ai-opinion,
+.ai-reco-header,
+.project-comment,
+.comments-table,
+.user-table {
+  overflow-wrap: anywhere !important;
+}
+
+.submission-card {
+  min-height: 132px !important;
+  overflow: hidden !important;
+}
+
+.detail-panel {
+  overflow: hidden !important;
+}
+
+.ai-opinion,
+.executive-decision-brief,
+[data-ai-panel="true"] {
+  border: 1px solid var(--itc-ai) !important;
+  border-radius: 12px !important;
+}
+
+.ai-reco-header {
+  align-items: flex-start !important;
+  gap: 12px !important;
+}
+
+.ai-reco-status,
+.ai-pick-badge {
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+
+.detail-title-actions {
+  min-width: 0 !important;
+  flex-wrap: wrap !important;
+}
+
+.detail-title-actions h1,
+.detail-panel h1,
+.detail-panel h2,
+.detail-panel h3 {
+  min-width: 0 !important;
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1100px) {
+  .workspace-grid,
+  .workspace-grid.narrow-left,
+  .ttrt-overview-dashboard,
+  .dashboard-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Product sweep: keep dense reviewer controls readable at every width. */
+.page-actions,
+.decision-actions,
+.executive-actions,
+.simplified-actions,
+.modal-actions,
+.modal-actions.inline-actions,
+.document-actions,
+.comment-actions,
+.signature-actions,
+.detail-title-actions {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.decision-actions,
+.executive-actions,
+.simplified-actions,
+.modal-actions,
+.detail-title-actions {
+  justify-content: flex-end !important;
+}
+
+.primary-button,
+.secondary-button,
+.text-button,
+.ai-picked-button {
+  min-width: 0 !important;
+  max-width: 100% !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  text-align: center !important;
+  line-height: 1.2 !important;
+}
+
+.primary-button svg,
+.secondary-button svg,
+.text-button svg {
+  flex: 0 0 auto !important;
+}
+
+.ai-picked-button {
+  position: relative !important;
+}
+
+.ai-pick-badge {
+  position: static !important;
+  display: inline-flex !important;
+  flex: 0 0 auto !important;
+  max-width: 100% !important;
+  margin-inline-start: 2px !important;
+  transform: none !important;
+  white-space: nowrap !important;
+}
+
+.executive-decision-brief,
+.ai-reco-header,
+.executive-brief-main,
+.review-comment-inline,
+.detail-panel,
+.submission-card {
+  min-width: 0 !important;
+}
+
+.executive-brief-main h3,
+.executive-brief-main p,
+.review-comment-inline h4,
+.review-comment-inline p,
+.detail-panel h1,
+.detail-panel h2,
+.detail-panel h3 {
+  overflow-wrap: anywhere !important;
+}
+
+@media (max-width: 1260px) {
+  .ai-reco-header {
+    grid-template-columns: 1fr !important;
+  }
+
+  .ai-reco-status,
+  .decision-actions,
+  .executive-actions,
+  .simplified-actions {
+    justify-items: start !important;
+    justify-content: flex-start !important;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-actions,
+  .decision-actions,
+  .executive-actions,
+  .simplified-actions,
+  .modal-actions,
+  .detail-title-actions {
+    justify-content: flex-start !important;
+  }
+}
+
+/* Sidebar contrast lock: selected tabs use the Figma pale highlight with readable text. */
+.nav-item.active,
+.nav-item.active *,
+.nav-item.active svg {
+  color: #166540 !important;
+}
+
+.nav-item.active {
+  background: var(--itc-green-soft) !important;
+  border-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Overview KPI lock: keep TTRT to four meaningful operational measures. */
+.ttrt-overview-dashboard {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.ttrt-overview-dashboard .overview-metric-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+}
+
+.ttrt-overview-dashboard .overview-metric-grid .metric-card {
+  min-height: 132px !important;
+  padding: 18px !important;
+}
+
+.ttrt-overview-dashboard .decision-split-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 0.42fr) minmax(0, 0.58fr) !important;
+  align-items: start !important;
+  gap: 24px !important;
+}
+
+.ttrt-overview-dashboard .decision-split-body {
+  margin-top: 0 !important;
+}
+
+@media (max-width: 980px) {
+  .ttrt-overview-dashboard .overview-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+
+  .ttrt-overview-dashboard .decision-split-card {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 640px) {
+  .ttrt-overview-dashboard .overview-metric-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* Embedded host guard: product pages must fit inside the Mobility AI iframe. */
+.embedded-shell {
+  overflow-x: hidden !important;
+}
+
+.embedded-shell .main {
+  margin-left: 0 !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+  transition: none !important;
+}
+
+.embedded-shell .main.expanded {
+  margin-left: 0 !important;
+  min-width: 0 !important;
+  overflow-x: hidden !important;
+}
+
+.embedded-shell .topbar,
+.embedded-shell .content,
+.embedded-shell .page-stack,
+.embedded-shell .page-title,
+.embedded-shell .ttrt-overview-dashboard,
+.embedded-shell .overview-kpi-panel,
+.embedded-shell .decision-split-card {
+  min-width: 0 !important;
+  max-width: 100% !important;
+}
+
+.embedded-shell .content {
+  padding: clamp(16px, 3vw, 28px) !important;
+}
+
+.mobility-return-button {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid #dbe5e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #244337;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.mobility-return-button:hover {
+  border-color: #b8ddc9;
+  background: #f3fbf6;
+  color: #166540;
+}
+
+.mobility-return-button > * {
+  pointer-events: none;
+}
+
+.app-context-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 0 12px;
+  border: 1px solid #dbe5e0;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #244337;
+  font-size: 13px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.app-context-button:hover {
+  border-color: #b8ddc9;
+  background: #f3fbf6;
+  color: #166540;
+}
+
+.app-context-button strong {
+  color: inherit;
+  font-size: 13px;
+  line-height: 1;
+}
+
+@media (max-width: 1100px) {
+  .embedded-shell .topbar {
+    height: auto !important;
+    min-height: 64px !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 10px !important;
+    overflow: visible !important;
+    padding: 12px 24px !important;
+  }
+
+  .embedded-shell .topbar .icon-button {
+    flex: 0 0 36px !important;
+  }
+
+  .embedded-shell .topbar .app-context-button {
+    flex: 0 0 auto !important;
+  }
+
+  .embedded-shell .topbar .breadcrumb {
+    min-width: 0 !important;
+  }
+
+  .embedded-shell .topbar .top-search {
+    flex: 1 1 220px !important;
+    max-width: none !important;
+    min-width: 180px !important;
+  }
+
+  .embedded-shell .topbar .top-actions {
+    flex: 1 1 100% !important;
+    margin-left: 0 !important;
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+    overflow: hidden !important;
+  }
+
+  .embedded-shell .topbar .role-switcher,
+  .embedded-shell .topbar .role-switcher select {
+    max-width: 100% !important;
+  }
+}
+
+.embedded-shell .page-title {
+  flex-wrap: wrap !important;
+}
+
+.embedded-shell .page-title h1,
+.embedded-shell .page-title p,
+.embedded-shell .section-heading h2,
+.embedded-shell .section-heading p {
+  max-width: 100% !important;
+  overflow-wrap: anywhere !important;
+}
+
+.ttrt-overview-dashboard .overview-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)) !important;
+}
+
+.embedded-shell .ttrt-overview-dashboard .decision-split-card {
+  grid-template-columns: 1fr !important;
+}
+
+.embedded-shell .decision-split-body {
+  grid-template-columns: minmax(132px, 160px) minmax(0, 1fr) !important;
+}
+
+.embedded-shell.sidebar-open .main {
+  margin-left: 0 !important;
+}
+
+.embedded-shell.sidebar-closed .main,
+.embedded-shell.sidebar-closed .main.expanded {
+  margin-left: 0 !important;
+}
+
+.language-toggle {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--itc-line);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #244337;
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+}
+
+.language-toggle:hover {
+  border-color: #b8ddc9;
+  background: #f3fbf6;
+  color: #166540;
+}
+
+.ttrt-rtl {
+  direction: rtl;
+}
+
+.ttrt-rtl .app-shell {
+  direction: rtl;
+}
+
+.ttrt-rtl .sidebar {
+  inset: 0 0 0 auto !important;
+  border-right: 0 !important;
+  border-left: 1px solid var(--itc-line) !important;
+}
+
+.ttrt-rtl .main {
+  margin-left: 0 !important;
+  margin-right: 240px !important;
+}
+
+.ttrt-rtl .main.expanded {
+  margin-right: 0 !important;
+}
+
+.ttrt-rtl .embedded-shell .main,
+.ttrt-rtl .embedded-shell .main.expanded {
+  margin-right: 0 !important;
+}
+
+.ttrt-rtl .top-actions {
+  margin-left: 0 !important;
+  margin-right: auto !important;
+}
+
+.ttrt-rtl input,
+.ttrt-rtl textarea,
+.ttrt-rtl select {
+  direction: rtl;
+  text-align: right;
+}
+
+.ttrt-rtl input[type="email"],
+.ttrt-rtl input[type="password"] {
+  direction: ltr;
+  text-align: left;
+}
+
+.ttrt-rtl .metric-card,
+.ttrt-rtl .info-block,
+.ttrt-rtl .submission-card,
+.ttrt-rtl .action-row,
+.ttrt-rtl .project-comment,
+.ttrt-rtl .uploaded-document,
+.ttrt-rtl .rule-card,
+.ttrt-rtl .notification-row {
+  text-align: right;
 }
