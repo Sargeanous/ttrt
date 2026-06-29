@@ -13,6 +13,8 @@ pnpm dev
 
 Open `http://localhost:5175`.
 
+For exact demo UI/UX reproduction steps, see `docs/UI_UX_REPRODUCTION.md`.
+
 Demo sign-in:
 
 - Email: `admin@itc.local`
